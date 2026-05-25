@@ -8,7 +8,7 @@ export const getProfile = asyncHandler(async (req, res) => {
 });
 
 export const updateProfile = asyncHandler(async (req, res) => {
-  const allowed = ['name', 'bio', 'skills', 'githubUrl', 'avatar'];
+  const allowed = ['name', 'bio', 'skills', 'githubUrl', 'twitterUrl', 'avatar'];
   const update = {};
   allowed.forEach((key) => {
     if (req.body[key] !== undefined) update[key] = req.body[key];
@@ -18,7 +18,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
 });
 
 export const getPublicProfile = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.userId).select('name email avatar bio skills githubUrl createdAt');
+  const user = await User.findById(req.params.userId).select('name email avatar bio skills githubUrl twitterUrl createdAt');
   if (!user) return fail(res, 'User not found', 404);
   return ok(res, { user });
 });

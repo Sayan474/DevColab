@@ -2,7 +2,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { TaskCard } from './TaskCard';
 import { cn } from '../../assets/utils';
 
-export const KanbanColumn = ({ title, tasks, onAddTask, onTaskClick, users }) => {
+export const KanbanColumn = ({ title, tasks, onAddTask, onTaskClick, users, onDropTask }) => {
     return (
         <div className="w-[300px] flex-shrink-0 flex flex-col gap-4">
             <div className={cn(
@@ -16,13 +16,19 @@ export const KanbanColumn = ({ title, tasks, onAddTask, onTaskClick, users }) =>
                 <button className="text-gray-500 hover:text-white"><MoreHorizontal size={14} /></button>
             </div>
 
-            <div className="flex-1 space-y-3 bg-black/10 dark:bg-white/1 rounded-lg p-1">
+            <div
+                className="flex-1 space-y-3 bg-black/10 dark:bg-white/1 rounded-lg p-1"
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => onDropTask?.(event)}
+            >
                 {tasks.map(task => (
                     <TaskCard 
                         key={task.id} 
                         task={task} 
                         onClick={() => onTaskClick(task)} 
                         assignee={users.find(u => u.id === task.assignee)}
+                        onDragStart={task.onDragStart}
+                        onDelete={task.onDelete}
                     />
                 ))}
                 <button 

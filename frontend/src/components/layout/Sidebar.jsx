@@ -88,10 +88,16 @@ export const Sidebar = ({ isCollapsed }) => {
         ))}
         
         {!isCollapsed && (
-           <button className="flex items-center gap-3 px-3 py-2 w-full text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-all mt-2">
+          <NavLink
+            to="/projects/new"
+            className={({ isActive }) => cn(
+              "flex items-center gap-3 px-3 py-2 w-full rounded-md transition-all mt-2",
+              isActive ? "bg-primary/10 text-primary border-l-2 border-primary" : "text-gray-500 hover:bg-black/5 dark:hover:bg-white/5"
+            )}
+          >
             <Plus size={16} />
             <span>New Project</span>
-          </button>
+          </NavLink>
         )}
       </nav>
 

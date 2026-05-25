@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, Search, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import { Avatar } from '../ui';
@@ -11,6 +12,8 @@ export const TopBar = ({ breadcrumbs = [] }) => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [search, setSearch] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) return;
@@ -27,6 +30,13 @@ export const TopBar = ({ breadcrumbs = [] }) => {
     setNotifications(data.notifications || []);
   };
 
+  const handleSearch = (event) => {
+    if (event.key !== 'Enter') return;
+    const query = search.trim();
+    if (!query) return;
+    navigate(`/projects?query=${encodeURIComponent(query)}`);
+  };
+
   const markRead = async (notification) => {
     await api.put(`/notifications/${notification._id || notification.id}/read`);
     setNotifications((prev) => prev.map((item) => (item._id || item.id) === (notification._id || notification.id) ? { ...item, read: true } : item));
@@ -34,19 +44,24 @@ export const TopBar = ({ breadcrumbs = [] }) => {
   };
 
   const unread = notifications.filter((notification) => !notification.read).length;
+  const normalizedCrumbs = breadcrumbs.map((crumb) => (typeof crumb === 'string' ? { label: crumb } : crumb));
 
   return (
     <header className="surface h-14 sticky top-0 z-30 flex items-center justify-between px-6 border-b">
       <div className="flex items-center gap-3">
         {/* Breadcrumbs */}
         <nav className="flex items-center text-xs text-gray-500 font-medium">
-          <span className="hover:text-primary cursor-pointer">DevCollab</span>
-          {breadcrumbs.map((crumb, idx) => (
-            <Fragment key={idx}>
+          <button type="button" onClick={() => navigate('/dashboard')} className="hover:text-primary">DevCollab</button>
+          {normalizedCrumbs.map((crumb, idx) => (
+            <Fragment key={`${crumb.label}-${idx}`}>
               <ChevronRight size={14} className="mx-1" />
-              <span className={cn(idx === breadcrumbs.length - 1 ? "text-gray-100 dark:text-gray-100 light:text-gray-900" : "hover:text-primary cursor-pointer")}>
-                {crumb}
-              </span>
+              {crumb.to ? (
+                <button type="button" onClick={() => navigate(crumb.to)} className="hover:text-primary">{crumb.label}</button>
+              ) : (
+                <span className={cn(idx === normalizedCrumbs.length - 1 ? "text-gray-100 dark:text-gray-100 light:text-gray-900" : "hover:text-primary cursor-pointer")}>
+                  {crumb.label}
+                </span>
+              )}
             </Fragment>
           ))}
         </nav>
@@ -58,12 +73,16 @@ export const TopBar = ({ breadcrumbs = [] }) => {
           <input 
             type="text" 
             placeholder="Search anything..." 
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={handleSearch}
             className="bg-black/5 dark:bg-white/5 border dark:border-dark-border light:border-light-border px-9 py-1.5 rounded-md text-sm outline-none focus:ring-1 focus:ring-primary w-64 transition-all"
           />
         </div>
 
         <div className="flex items-center gap-4">
-          <button onClick={openPanel} className="relative text-gray-500 hover:text-primary transition-colors">
+          <button onClick={openPanel} className={cn("relative text-gray-500 hover:text-primary transition-colors", isOpen && "bell-toggle")}
+          >
             <Bell size={20} />
             {unread > 0 && <span className="absolute -top-2 -right-2 min-w-4 h-4 bg-danger rounded-full border-2 border-dark-surface text-[9px] text-white flex items-center justify-center">{unread}</span>}
           </button>
@@ -79,13 +98,17 @@ export const TopBar = ({ breadcrumbs = [] }) => {
               ))}
             </div>
           )}
-          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/settings/profile')}
+            className="flex items-center gap-2 text-left"
+          >
             <div className="text-right hidden sm:block">
               <p className="text-xs font-bold">{user?.name}</p>
               <p className="text-[10px] text-gray-500">{user?.role}</p>
             </div>
             <Avatar src={user?.avatar} name={user?.name} size="sm" />
-          </div>
+          </button>
         </div>
       </div>
     </header>

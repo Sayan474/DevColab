@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { PageShell } from "../../components/layout/PageShell";
 import { Button, Badge, Avatar } from "../../components/ui";
 import { cn } from "../../assets/utils";
@@ -14,6 +14,7 @@ const Dashboard = () => {
   const { currentWorkspace, projects, fetchProjects } = useWorkspace();
   const [tasks, setTasks] = useState([]);
   const [activities, setActivities] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (currentWorkspace) fetchProjects(currentWorkspace._id || currentWorkspace.id);
@@ -32,6 +33,11 @@ const Dashboard = () => {
   }, [currentWorkspace, projects]);
 
   const pendingTasks = tasks.filter((task) => taskAssigneeId(task)?.toString() === (user?._id || user?.id) && task.status !== "done");
+  const primaryProjectId = projects[0]?._id || projects[0]?.id;
+
+  const handleSchedule = () => navigate('/tasks');
+  const handleNewProject = () => navigate('/projects/new');
+  const handleViewFeed = () => navigate(primaryProjectId ? `/project/${primaryProjectId}/activity` : '/projects');
 
   return (
     <PageShell breadcrumbs={["Dashboard"]}>
@@ -42,8 +48,8 @@ const Dashboard = () => {
             <p className="text-gray-500">Here's what's happening across your projects today.</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="secondary" className="gap-2"><Calendar size={18} /> My Schedule</Button>
-            <Button className="gap-2"><Plus size={18} /> New Project</Button>
+            <Button variant="secondary" className="gap-2" onClick={handleSchedule}><Calendar size={18} /> My Schedule</Button>
+            <Button className="gap-2" onClick={handleNewProject}><Plus size={18} /> New Project</Button>
           </div>
         </div>
 
@@ -53,7 +59,7 @@ const Dashboard = () => {
             ["Team Standup", MessageSquare, "success"],
             ["What's Blocking?", BarChart2, "info"],
           ].map(([label, Icon, tone]) => (
-            <Link key={label} to={projects[0] ? `/project/${projects[0]._id || projects[0].id}/ai` : "/dashboard"} className="surface p-4 rounded-xl flex items-center gap-4 hover:border-primary transition-all group text-left">
+            <Link key={label} to={projects[0] ? `/project/${projects[0]._id || projects[0].id}/ai` : "/dashboard"} className="surface p-4 rounded-xl flex items-center gap-4 hover:border-primary transition-all group text-left card-interactive">
               <div className={`w-10 h-10 rounded-lg bg-${tone}/10 flex items-center justify-center text-${tone}`}><Icon size={20} /></div>
               <div><p className="font-bold">{label}</p><p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">AI Action</p></div>
             </Link>
@@ -69,7 +75,7 @@ const Dashboard = () => {
               <div className="space-y-2">
                 {pendingTasks.length === 0 && <div className="surface p-6 rounded-xl text-sm text-gray-500">No pending tasks assigned to you.</div>}
                 {pendingTasks.map((task) => (
-                  <Link to={`/project/${task.projectId?._id || task.projectId}/board`} key={task._id || task.id} className="surface p-3 rounded-lg flex items-center justify-between hover:border-dark-border bg-white/5">
+                  <Link to={`/project/${task.projectId?._id || task.projectId}/board`} key={task._id || task.id} className="surface p-3 rounded-lg flex items-center justify-between hover:border-dark-border bg-white/5 card-interactive">
                     <div className="flex items-center gap-3">
                       <div className={cn("w-2 h-2 rounded-full", task.priority === "P0" ? "bg-danger" : task.priority === "P1" ? "bg-warning" : "bg-info")} />
                       <span className="font-medium">{task.title}</span>
@@ -85,7 +91,7 @@ const Dashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {projects.length === 0 && <div className="surface p-6 rounded-xl text-sm text-gray-500">Create your first project from onboarding or workspace settings.</div>}
                 {projects.map((project) => (
-                  <Link to={`/project/${project._id || project.id}/board`} key={project._id || project.id} className="surface p-5 rounded-xl hover:translate-y-[-2px] transition-all cursor-pointer group">
+                  <Link to={`/project/${project._id || project.id}/board`} key={project._id || project.id} className="surface p-5 rounded-xl cursor-pointer group card-interactive">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xl" style={{ backgroundColor: project.color }}>{project.name.charAt(0)}</div>
@@ -99,7 +105,7 @@ const Dashboard = () => {
             </section>
           </div>
 
-          <section className="surface p-6 rounded-2xl h-fit sticky top-24">
+          <section className="surface p-6 rounded-2xl h-fit sticky top-24 card-interactive">
             <h2 className="text-lg font-bold mb-6">Recent Activity</h2>
             <div className="space-y-6">
               {activities.length === 0 && <p className="text-sm text-gray-500">No activity yet.</p>}
@@ -110,7 +116,7 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
-            <Button variant="secondary" className="w-full mt-8 py-2 text-xs">View Full Feed <ArrowRight size={14} /></Button>
+            <Button variant="secondary" className="w-full mt-8 py-2 text-xs" onClick={handleViewFeed}>View Full Feed <ArrowRight size={14} /></Button>
           </section>
         </div>
       </div>

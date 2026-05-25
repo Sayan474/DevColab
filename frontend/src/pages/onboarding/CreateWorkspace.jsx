@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { ChevronRight, ChevronLeft, Upload, X, Users, CreditCard, Check } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
@@ -12,6 +12,8 @@ const CreateWorkspace = () => {
   const [emailInput, setEmailInput] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [logoPreview, setLogoPreview] = useState('');
+  const fileInputRef = useRef(null);
   const { createWorkspace, createProject } = useWorkspace();
   const navigate = useNavigate();
   const nextStep = () => setStep(s => Math.min(s + 1, 3));
@@ -27,11 +29,34 @@ const CreateWorkspace = () => {
     setEmails(emails.filter((e) => e !== email));
   };
 
+  const handleLogoSelect = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file for the logo.');
+      event.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLogoPreview(String(reader.result || ''));
+      setError('');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearLogo = () => {
+    setLogoPreview('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const completeSetup = async () => {
     setSubmitting(true);
     setError("");
     try {
-      const workspace = await createWorkspace({ name });
+      const payload = { name };
+      if (logoPreview) payload.avatar = logoPreview;
+      const workspace = await createWorkspace(payload);
       await createProject({ workspaceId: workspace._id || workspace.id, name: "DevCollab Platform", description: "Your first collaboration project", color: "#3B82F6" });
       navigate("/dashboard");
     } catch (err) {
@@ -67,9 +92,38 @@ const CreateWorkspace = () => {
                 <p className="text-gray-500">This is where your team's projects will live.</p>
               </div>
               <div className="flex flex-col items-center gap-6">
-                <div className="w-24 h-24 rounded-2xl bg-dark-border border border-dashed border-gray-600 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary transition-colors">
-                  <Upload size={24} className="text-gray-500" />
-                  <span className="text-[10px] font-bold uppercase text-gray-500">Upload Logo</span>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-24 h-24 rounded-2xl bg-dark-border border border-dashed border-gray-600 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary transition-colors overflow-hidden"
+                  >
+                    {logoPreview ? (
+                      <img src={logoPreview} alt="Workspace logo preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <>
+                        <Upload size={24} className="text-gray-500" />
+                        <span className="text-[10px] font-bold uppercase text-gray-500">Upload Logo</span>
+                      </>
+                    )}
+                  </button>
+                  {logoPreview && (
+                    <button
+                      type="button"
+                      onClick={clearLogo}
+                      className="absolute -top-2 -right-2 bg-dark-surface border border-dark-border text-gray-400 hover:text-white rounded-full w-6 h-6 flex items-center justify-center"
+                      aria-label="Remove logo"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogoSelect}
+                  />
                 </div>
                 <div className="w-full space-y-4">
                   <Input 

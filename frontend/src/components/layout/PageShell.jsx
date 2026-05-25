@@ -6,7 +6,7 @@ export const PageShell = ({ children, breadcrumbs }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-dark-bg transition-colors duration-300">
+    <div className="flex min-h-screen bg-light-bg dark:bg-dark-bg transition-colors duration-300">
       <Sidebar
         isCollapsed={isCollapsed}
         onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
