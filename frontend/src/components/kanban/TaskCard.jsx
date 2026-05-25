@@ -1,7 +1,8 @@
 import { Badge, Avatar } from "../ui";
-import { Paperclip, MessageSquare, MoreHorizontal } from "lucide-react";
+import { Paperclip, MessageSquare, MoreHorizontal, Calendar, Trash2 } from "lucide-react";
+import { formatDate } from "../../lib/format";
 
-export const TaskCard = ({ task, onClick, assignee }) => {
+export const TaskCard = ({ task, onClick, assignee, onDragStart, onDelete }) => {
   const getPriorityBadge = (p) => {
     if (p === "P0")
       return (
@@ -34,12 +35,17 @@ export const TaskCard = ({ task, onClick, assignee }) => {
   return (
     <div
       onClick={onClick}
+      draggable
+      onDragStart={(event) => onDragStart?.(event, task)}
       className="surface p-4 rounded-xl space-y-4 hover:translate-y-[-2px] transition-all cursor-pointer group shadow-sm border dark:border-dark-border/50"
     >
       <div className="flex items-center justify-between">
         {getPriorityBadge(task.priority)}
         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button className="text-gray-500 hover:text-white">
+          <button className="text-gray-500 hover:text-danger" onClick={(event) => { event.preventDefault(); event.stopPropagation(); onDelete?.(task); }}>
+            <Trash2 size={14} />
+          </button>
+          <button className="text-gray-500 hover:text-white" onClick={(event) => event.stopPropagation()}>
             <MoreHorizontal size={14} />
           </button>
         </div>
@@ -47,6 +53,9 @@ export const TaskCard = ({ task, onClick, assignee }) => {
       <h4 className="font-bold text-sm leading-snug group-hover:text-primary transition-colors">
         {task.title}
       </h4>
+      <div className="text-[10px] text-gray-500 flex items-center gap-2">
+        <Calendar size={10} /> {formatDate(task.dueDate)}
+      </div>
       <div className="flex flex-wrap gap-1">
         {task.labels.map((l) => (
           <span
@@ -65,7 +74,7 @@ export const TaskCard = ({ task, onClick, assignee }) => {
             </span>
           )}
           <span className="text-[10px] flex items-center gap-1">
-            <MessageSquare size={10} /> 4
+            <MessageSquare size={10} /> {task.comments || 0}
           </span>
         </div>
         <Avatar src={assignee?.avatar} name={assignee?.name} size="xs" />

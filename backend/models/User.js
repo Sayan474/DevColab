@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
   bio: { type: String, default: '' },
   skills: [{ type: String }],
   githubUrl: { type: String, default: '' },
+  twitterUrl: { type: String, default: '' },
   workspaces: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Workspace' }],
   createdAt: { type: Date, default: Date.now },
 });

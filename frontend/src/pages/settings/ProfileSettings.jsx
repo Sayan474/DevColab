@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { PageShell } from '../../components/layout/PageShell';
 import { Button, Input, Avatar } from '../../components/ui';
 import { 
@@ -14,11 +14,35 @@ import api, { unwrap } from '../../lib/api';
 
 const ProfileSettings = () => {
     const { user, setUser, logout } = useAuth();
-    const [form, setForm] = useState({ name: user?.name || '', bio: user?.bio || '', githubUrl: user?.githubUrl || '' });
+    const [form, setForm] = useState({
+        name: user?.name || '',
+        bio: user?.bio || '',
+        githubUrl: user?.githubUrl || '',
+        twitterUrl: user?.twitterUrl || '',
+        avatar: user?.avatar || '',
+    });
+    const fileInputRef = useRef(null);
 
     const save = async () => {
         const data = unwrap(await api.put('/users/profile', form));
         setUser(data.user);
+    };
+
+    const handleAvatarSelect = (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            setForm((prev) => ({ ...prev, avatar: String(reader.result || '') }));
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const normalizeUrl = (value) => {
+        if (!value) return '';
+        if (/^https?:\/\//i.test(value)) return value;
+        return `https://${value}`;
     };
 
     return (
@@ -29,10 +53,21 @@ const ProfileSettings = () => {
                     <div className="surface p-10 rounded-2xl border space-y-8">
                         <div className="flex flex-col md:flex-row items-center gap-10">
                             <div className="relative group">
-                                <Avatar src={user?.avatar} size="lg" className="w-32 h-32 border-4" />
-                                <button className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Avatar src={form.avatar || user?.avatar} size="lg" className="w-32 h-32 border-4" />
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
                                     <Camera size={24} className="text-white" />
                                 </button>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleAvatarSelect}
+                                />
                             </div>
                             <div className="flex-1 w-full space-y-4">
                                 <div className="grid md:grid-cols-2 gap-4">
@@ -58,22 +93,59 @@ const ProfileSettings = () => {
                 <section className="space-y-6">
                     <h2 className="text-2xl font-bold flex items-center gap-2"><Github size={20} /> Social Accounts</h2>
                     <div className="surface p-8 rounded-2xl border space-y-4">
-                        <div className="flex items-center justify-between p-4 rounded-xl border border-dark-border hover:bg-white/5 transition-all">
-                            <div className="flex items-center gap-3">
-                                <Github size={24} />
-                                <div>
-                                    <p className="font-bold">GitHub</p>
-                                    <p className="text-xs text-gray-500">Connected as @johndoe</p>
+                        <div className="space-y-3 p-4 rounded-xl border border-dark-border">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Github size={24} />
+                                    <div>
+                                        <p className="font-bold">GitHub</p>
+                                        <p className="text-xs text-gray-500">{form.githubUrl ? 'Connected' : 'Not connected'}</p>
+                                    </div>
                                 </div>
+                                {form.githubUrl && (
+                                    <a
+                                        href={normalizeUrl(form.githubUrl)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-xs text-primary"
+                                    >
+                                        Open
+                                    </a>
+                                )}
                             </div>
-                            <Button variant="secondary" size="sm">Disconnect</Button>
+                            <Input
+                                label="GitHub Profile URL"
+                                placeholder="https://github.com/yourname"
+                                value={form.githubUrl}
+                                onChange={(e) => setForm((p) => ({ ...p, githubUrl: e.target.value }))}
+                            />
                         </div>
-                        <div className="flex items-center justify-between p-4 rounded-xl border border-dark-border border-dashed hover:border-primary transition-all cursor-pointer group">
-                            <div className="flex items-center gap-3">
-                                <Twitter size={24} className="text-gray-500 group-hover:text-primary transition-colors" />
-                                <span className="text-sm font-bold text-gray-500 group-hover:text-white transition-colors">Connect Twitter</span>
+                        <div className="space-y-3 p-4 rounded-xl border border-dark-border">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <Twitter size={24} className="text-gray-500" />
+                                    <div>
+                                        <p className="font-bold">Twitter</p>
+                                        <p className="text-xs text-gray-500">{form.twitterUrl ? 'Connected' : 'Not connected'}</p>
+                                    </div>
+                                </div>
+                                {form.twitterUrl && (
+                                    <a
+                                        href={normalizeUrl(form.twitterUrl)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-xs text-primary"
+                                    >
+                                        Open
+                                    </a>
+                                )}
                             </div>
-                            <ChevronRight size={18} className="text-gray-500" />
+                            <Input
+                                label="Twitter Profile URL"
+                                placeholder="https://x.com/yourname"
+                                value={form.twitterUrl}
+                                onChange={(e) => setForm((p) => ({ ...p, twitterUrl: e.target.value }))}
+                            />
                         </div>
                     </div>
                 </section>
