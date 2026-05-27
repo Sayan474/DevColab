@@ -5,6 +5,7 @@ import { Badge, Avatar, Button, Input } from '../../components/ui';
 import { cn } from '../../assets/utils';
 import { Plus, MoreHorizontal, X, LayoutGrid, List, CalendarDays, Upload, Trash2 } from 'lucide-react';
 import { KanbanColumn } from '../../components/kanban/KanbanColumn';
+import MarkdownRenderer from '../../components/markdown/MarkdownRenderer';
 import api, { unwrap } from '../../lib/api';
 import { boardSocket, presenceSocket } from '../../lib/socket';
 import { formatDate, statusLabels, statusOrder } from '../../lib/format';
@@ -471,6 +472,12 @@ const KanbanPage = () => {
                   value={taskDraft?.description || ''}
                   onChange={(event) => setTaskDraft((prev) => ({ ...prev, description: event.target.value }))}
                 />
+                {taskDraft?.description ? (
+                  <div className="mt-3 rounded-xl border border-dark-border bg-black/10 dark:bg-white/5 p-4">
+                    <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">Markdown preview</p>
+                    <MarkdownRenderer content={taskDraft.description} compact className="rounded-none" />
+                  </div>
+                ) : null}
               </div>
               <div className="flex justify-end">
                 <Button size="sm" className="gap-2" onClick={saveTask} disabled={saving}>
@@ -502,7 +509,7 @@ const KanbanPage = () => {
               <h4 className="font-bold">Comments <span className="text-xs text-gray-500">{selectedTask.comments?.length || 0}</span></h4>
               <textarea name="comment" placeholder="Add a comment... Use @Full Name to mention" className="w-full bg-black/10 dark:bg-white/5 border border-dark-border rounded-xl p-3 text-sm outline-none focus:ring-1 focus:ring-primary h-20 resize-none" />
               <Button size="sm">Post Comment</Button>
-              <div className="space-y-2">{selectedTask.comments?.map((comment) => <div key={comment._id} className="text-xs bg-white/5 rounded-lg p-3"><strong>{comment.author?.name || "User"}:</strong> {comment.text}</div>)}</div>
+              <div className="space-y-2">{selectedTask.comments?.map((comment) => <div key={comment._id} className="rounded-xl border border-dark-border bg-white/5 p-3"><p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">{comment.author?.name || "User"}</p><MarkdownRenderer content={comment.text || ''} compact className="rounded-none" /></div>)}</div>
             </form>
           </div>
         )}
