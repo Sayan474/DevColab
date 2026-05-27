@@ -11,7 +11,11 @@ const snippetSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-snippetSchema.index({ projectId: 1, title: 'text', description: 'text', tags: 1 });
+snippetSchema.index(
+  { projectId: 1, title: 'text', description: 'text', code: 'text' },
+  { default_language: 'none', language_override: 'snippetLanguage' },
+);
+snippetSchema.index({ projectId: 1, tags: 1 });
 snippetSchema.set('toJSON', { transform: (doc, ret) => { ret.id = ret._id.toString(); delete ret.__v; return ret; } });
 
 export default mongoose.model('Snippet', snippetSchema);

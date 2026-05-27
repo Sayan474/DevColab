@@ -1,5 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import { validationResult } from 'express-validator';
 import User from '../models/User.js';
 import { fail, ok } from '../utils/http.js';
@@ -35,4 +37,51 @@ export const login = asyncHandler(async (req, res) => {
 export const me = asyncHandler(async (req, res) => {
   const user = await publicUser(req.user.id);
   return ok(res, { user });
+});
+
+const sendResetEmail = async (email, otp) => {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    const error = new Error('Email credentials are not configured');
+    error.status = 503;
+    throw error;
+  }
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+  });
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'DevCollab password reset code',
+    text: `Your DevCollab password reset code is ${otp}. It expires in 10 minutes.`,
+  });
+};
+
+export const requestPasswordReset = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) return fail(res, 'Email is required', 422);
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user) return ok(res, { sent: true });
+  const otp = crypto.randomInt(100000, 999999).toString();
+  const hash = crypto.createHash('sha256').update(otp).digest('hex');
+  user.resetOtpHash = hash;
+  user.resetOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
+  await user.save();
+  await sendResetEmail(user.email, otp);
+  return ok(res, { sent: true });
+});
+
+export const resetPasswordWithOtp = asyncHandler(async (req, res) => {
+  const { email, otp, password } = req.body;
+  if (!email || !otp || !password) return fail(res, 'Email, OTP, and password are required', 422);
+  const user = await User.findOne({ email: email.toLowerCase() });
+  if (!user || !user.resetOtpHash || !user.resetOtpExpires) return fail(res, 'Invalid or expired OTP', 400);
+  if (user.resetOtpExpires < new Date()) return fail(res, 'Invalid or expired OTP', 400);
+  const hash = crypto.createHash('sha256').update(String(otp).trim()).digest('hex');
+  if (hash !== user.resetOtpHash) return fail(res, 'Invalid or expired OTP', 400);
+  user.passwordHash = await bcrypt.hash(password, 12);
+  user.resetOtpHash = '';
+  user.resetOtpExpires = null;
+  await user.save();
+  return ok(res, { reset: true });
 });

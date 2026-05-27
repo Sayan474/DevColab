@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
   skills: [{ type: String }],
   githubUrl: { type: String, default: '' },
   twitterUrl: { type: String, default: '' },
+  resetOtpHash: { type: String, default: '' },
+  resetOtpExpires: { type: Date },
   workspaces: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Workspace' }],
   createdAt: { type: Date, default: Date.now },
 });

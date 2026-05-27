@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { PageShell } from "../../components/layout/PageShell";
 import { Avatar, Button } from "../../components/ui";
@@ -10,6 +10,7 @@ import api, { unwrap } from "../../lib/api";
 const AIPage = () => {
   const { id: projectId } = useParams();
   const { user } = useAuth();
+  const [projectName, setProjectName] = useState('');
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState([{ role: "ai", text: "Hello! I'm your DevCollab AI Assistant. How can I help you today?" }]);
   const [reviewInput, setReviewInput] = useState("");
@@ -43,8 +44,13 @@ const AIPage = () => {
     setReview(data.review);
   };
 
-  return (
-    <PageShell breadcrumbs={["Projects", "AI Assistant"]}>
+  useEffect(() => {
+    if (!projectId) return;
+    api.get(`/projects/${projectId}`).then((res) => setProjectName(unwrap(res).project?.name || '')).catch(() => {});
+  }, [projectId]);
+
+      return (
+        <PageShell breadcrumbs={[{ label: 'Projects', to: '/projects' }, { label: projectName || 'Project', to: `/project/${projectId}/board` }, { label: 'AI Assistant' }]}>
       <div className="h-full flex gap-6 overflow-hidden">
         <div className="flex-1 flex flex-col gap-6">
           <div className="flex-1 surface rounded-2xl flex flex-col overflow-hidden border">

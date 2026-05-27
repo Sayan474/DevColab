@@ -7,14 +7,24 @@ import {
   EyeOff,
 } from "lucide-react";
 
-import { Button, Input } from "../../components/ui";
+import { Button, Input, Modal } from "../../components/ui";
 import { useAuth } from "../../context/useAuth";
+import api, { unwrap } from "../../lib/api";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetStep, setResetStep] = useState("request");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetOtp, setResetOtp] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetConfirm, setResetConfirm] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -29,6 +39,53 @@ const Login = () => {
       setError(err.response?.data?.message || "Unable to log in");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const openReset = () => {
+    setResetOpen(true);
+    setResetStep("request");
+    setResetEmail("");
+    setResetOtp("");
+    setResetPassword("");
+    setResetConfirm("");
+    setResetError("");
+    setResetMessage("");
+  };
+
+  const requestOtp = async () => {
+    setResetLoading(true);
+    setResetError("");
+    setResetMessage("");
+    try {
+      await api.post("/auth/password/otp", { email: resetEmail });
+      setResetMessage("We sent a 6-digit code to your email.");
+      setResetStep("verify");
+    } catch (err) {
+      setResetError(err.response?.data?.message || "Unable to send reset code");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const resetPasswordWithOtp = async () => {
+    if (resetPassword !== resetConfirm) {
+      setResetError("Passwords do not match");
+      return;
+    }
+    setResetLoading(true);
+    setResetError("");
+    setResetMessage("");
+    try {
+      const data = unwrap(await api.post("/auth/password/reset", { email: resetEmail, otp: resetOtp, password: resetPassword }));
+      if (data?.reset) {
+        setResetMessage("Password updated. You can now log in.");
+        setResetStep("done");
+      }
+    } catch (err) {
+      setResetError(err.response?.data?.message || "Unable to reset password");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -53,7 +110,7 @@ const Login = () => {
             </div>
 
             <span className="text-3xl font-black tracking-tight">
-              DevColab
+              DevCollab
             </span>
           </div>
 
@@ -134,41 +191,7 @@ const Login = () => {
             </p>
           </div>
 
-          {/* GitHub Button */}
           <div className="space-y-5">
-            <Button
-              variant="secondary"
-              className="
-                w-full
-                py-3
-                cursor-pointer
-                rounded-xl
-                border
-                border-white/10
-                bg-white/[0.04]
-                hover:bg-white/[0.08]
-                transition-all
-                flex
-                items-center
-                justify-center
-                gap-3
-              "
-            >
-              Continue with GitHub
-            </Button>
-
-            {/* Divider */}
-            <div className="flex items-center gap-4 py-1">
-              <div className="flex-1 h-px bg-white/10" />
-
-              <span className="text-[11px] uppercase tracking-widest text-zinc-500 font-semibold">
-                OR
-              </span>
-
-              <div className="flex-1 h-px bg-white/10" />
-            </div>
-
-            {/* FORM */}
             <form
               className="space-y-5"
               onSubmit={handleSubmit}
@@ -201,6 +224,10 @@ const Login = () => {
 
                   <a
                     href="#"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      openReset();
+                    }}
                     className="text-xs text-indigo-400 hover:text-indigo-300 transition"
                   >
                     Forgot Password?
@@ -307,6 +334,80 @@ const Login = () => {
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={resetOpen}
+        onClose={() => setResetOpen(false)}
+        title="Reset your password"
+        footer={(
+          <>
+            {resetStep === "request" && (
+              <Button variant="secondary" onClick={() => setResetOpen(false)}>Cancel</Button>
+            )}
+            {resetStep === "verify" && (
+              <Button variant="secondary" onClick={() => setResetStep("request")}>Back</Button>
+            )}
+          </>
+        )}
+      >
+        <div className="space-y-4">
+          {resetError && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{resetError}</p>}
+          {resetMessage && <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">{resetMessage}</p>}
+
+          {resetStep === "request" && (
+            <>
+              <Input
+                label="Email address"
+                type="email"
+                placeholder="john@example.com"
+                value={resetEmail}
+                onChange={(event) => setResetEmail(event.target.value)}
+              />
+              <Button className="w-full" onClick={requestOtp} disabled={!resetEmail || resetLoading}>
+                {resetLoading ? "Sending..." : "Send reset code"}
+              </Button>
+            </>
+          )}
+
+          {resetStep === "verify" && (
+            <>
+              <Input
+                label="Email address"
+                type="email"
+                value={resetEmail}
+                onChange={(event) => setResetEmail(event.target.value)}
+              />
+              <Input
+                label="OTP code"
+                placeholder="6-digit code"
+                value={resetOtp}
+                onChange={(event) => setResetOtp(event.target.value)}
+              />
+              <Input
+                label="New password"
+                type="password"
+                value={resetPassword}
+                onChange={(event) => setResetPassword(event.target.value)}
+              />
+              <Input
+                label="Confirm new password"
+                type="password"
+                value={resetConfirm}
+                onChange={(event) => setResetConfirm(event.target.value)}
+              />
+              <Button className="w-full" onClick={resetPasswordWithOtp} disabled={resetLoading || !resetOtp || !resetPassword}>
+                {resetLoading ? "Updating..." : "Update password"}
+              </Button>
+            </>
+          )}
+
+          {resetStep === "done" && (
+            <Button className="w-full" onClick={() => setResetOpen(false)}>
+              Back to login
+            </Button>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };

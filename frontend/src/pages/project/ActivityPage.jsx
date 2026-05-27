@@ -13,12 +13,18 @@ const ActivityPage = () => {
   const { id: projectId } = useParams();
   const { currentWorkspace } = useWorkspace();
   const [activities, setActivities] = useState([]);
+  const [projectName, setProjectName] = useState('');
   const workspaceId = currentWorkspace?._id || currentWorkspace?.id;
 
   useEffect(() => {
     if (!workspaceId) return;
     api.get(`/activity/workspace/${workspaceId}?projectId=${projectId}`).then((res) => setActivities(unwrap(res).activities || [])).catch(() => {});
   }, [workspaceId, projectId]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    api.get(`/projects/${projectId}`).then((res) => setProjectName(unwrap(res).project?.name || '')).catch(() => {});
+  }, [projectId]);
 
   useEffect(() => {
     boardSocket.connect();
@@ -31,7 +37,7 @@ const ActivityPage = () => {
   const getTypeIcon = (type) => type === "task" ? <CheckCircle2 size={14} className="text-primary" /> : type === "wiki" ? <FileText size={14} className="text-blue-500" /> : type === "snippet" ? <Code size={14} className="text-amber-500" /> : type === "member" ? <UserPlus size={14} className="text-success" /> : <MessageSquare size={14} />;
 
   return (
-    <PageShell breadcrumbs={["Projects", "Activity"]}>
+    <PageShell breadcrumbs={[{ label: "Projects", to: "/projects" }, { label: projectName || 'Project', to: `/project/${projectId}/board` }, { label: "Activity" }]}>
       <div className="max-w-4xl mx-auto space-y-8">
         <h1 className="text-2xl font-bold">Activity Feed</h1>
         <div className="space-y-4">

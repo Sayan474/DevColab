@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB from './config/db.js';
+import Snippet from './models/Snippet.js';
 import { setIO } from './config/socket.js';
 import registerSockets from './sockets/index.js';
 import authRoutes from './routes/auth.routes.js';
@@ -56,7 +57,8 @@ app.use('/api/ai', aiRoutes);
 app.use(errorHandler);
 
 connectDB()
-  .then(() => {
+  .then(async () => {
+    await Snippet.syncIndexes();
     httpServer.listen(PORT, () => console.log(`DevCollab backend running on port ${PORT}`));
   })
   .catch((error) => {
