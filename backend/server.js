@@ -57,9 +57,14 @@ app.use('/api/ai', aiRoutes);
 app.use(errorHandler);
 
 connectDB()
-  .then(async () => {
-    await Snippet.syncIndexes();
+  .then(() => {
     httpServer.listen(PORT, () => console.log(`DevCollab backend running on port ${PORT}`));
+
+    Snippet.syncIndexes()
+      .then(() => console.log('Snippet indexes synchronized'))
+      .catch((error) => {
+        console.error('Snippet index synchronization failed:', error.message);
+      });
   })
   .catch((error) => {
     console.error('Failed to start DevCollab backend:', error.message);
