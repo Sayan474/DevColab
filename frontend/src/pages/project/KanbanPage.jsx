@@ -253,7 +253,7 @@ const KanbanPage = () => {
   };
 
   return (
-    <PageShell breadcrumbs={[{ label: 'Projects', to: '/projects' }, { label: 'Board' }]}>
+    <PageShell breadcrumbs={[{ label: 'Projects', to: '/projects' }, { label: projectName || 'Project', to: `/project/${projectId}/board` }, { label: 'Board' }]}>
       <div className="h-full flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>

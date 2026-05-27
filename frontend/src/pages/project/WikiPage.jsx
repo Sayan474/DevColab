@@ -11,6 +11,7 @@ import { timeAgo } from '../../lib/format';
 const WikiPage = () => {
   const { id: projectId } = useParams();
   const { user } = useAuth();
+  const [projectName, setProjectName] = useState('');
   const [pages, setPages] = useState([]);
   const [selectedPageId, setSelectedPageId] = useState(null);
   const [selectedPage, setSelectedPage] = useState(null);
@@ -30,6 +31,11 @@ const WikiPage = () => {
     if (!selectedPageId) return;
     api.get(`/wiki/${selectedPageId}`).then((res) => setSelectedPage(unwrap(res).page)).catch(() => {});
   }, [selectedPageId]);
+
+  useEffect(() => {
+    if (!projectId) return;
+    api.get(`/projects/${projectId}`).then((res) => setProjectName(unwrap(res).project?.name || '')).catch(() => {});
+  }, [projectId]);
 
   useEffect(() => {
     if (!selectedPage) return;
@@ -59,7 +65,7 @@ const WikiPage = () => {
   };
 
   return (
-    <PageShell breadcrumbs={['Projects', 'Wiki']}>
+    <PageShell breadcrumbs={[{ label: 'Projects', to: '/projects' }, { label: projectName || 'Project', to: `/project/${projectId}/board` }, { label: 'Wiki' }]}>
       <div className="h-full flex gap-0 -mx-6 -my-6 overflow-hidden">
         <div className={cn("surface border-r transition-all duration-300 flex flex-col", isSidebarCollapsed ? "w-0" : "w-72")}>
           <div className="p-4 border-b flex items-center gap-2 whitespace-nowrap">

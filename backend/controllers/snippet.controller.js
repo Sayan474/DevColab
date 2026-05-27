@@ -15,7 +15,10 @@ export const createSnippet = asyncHandler(async (req, res) => {
 export const listSnippets = asyncHandler(async (req, res) => {
   const filter = { projectId: req.params.projectId };
   if (req.query.tag) filter.tags = req.query.tag;
-  if (req.query.search) filter.$or = [{ title: new RegExp(req.query.search, 'i') }, { description: new RegExp(req.query.search, 'i') }, { code: new RegExp(req.query.search, 'i') }];
+  if (req.query.search) {
+    const query = new RegExp(req.query.search, 'i');
+    filter.$or = [{ title: query }, { description: query }, { code: query }, { tags: query }];
+  }
   const snippets = await Snippet.find(filter).sort({ createdAt: -1 }).populate('createdBy', 'name avatar email');
   return ok(res, { snippets });
 });

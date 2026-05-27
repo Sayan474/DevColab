@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB from './config/db.js';
+import Snippet from './models/Snippet.js';
 import { setIO } from './config/socket.js';
 import registerSockets from './sockets/index.js';
 import authRoutes from './routes/auth.routes.js';
@@ -58,6 +59,12 @@ app.use(errorHandler);
 connectDB()
   .then(() => {
     httpServer.listen(PORT, () => console.log(`DevCollab backend running on port ${PORT}`));
+
+    Snippet.syncIndexes()
+      .then(() => console.log('Snippet indexes synchronized'))
+      .catch((error) => {
+        console.error('Snippet index synchronization failed:', error.message);
+      });
   })
   .catch((error) => {
     console.error('Failed to start DevCollab backend:', error.message);
