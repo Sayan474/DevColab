@@ -24,7 +24,8 @@ const Dashboard = () => {
     const load = async () => {
       if (!currentWorkspace) return;
       const workspaceId = currentWorkspace._id || currentWorkspace.id;
-      const activityData = unwrap(await api.get(`/activity/workspace/${workspaceId}`));
+      const activityData = unwrap(await api.get(`/activity/workspace/${workspaceId}?limit=4`));
+      console.log(activityData.activities);
       setActivities(activityData.activities || []);
       const taskLists = await Promise.all(projects.slice(0, 4).map((project) => api.get(`/tasks/project/${project._id || project.id}`)));
       setTasks(taskLists.flatMap((response) => unwrap(response).tasks || []));

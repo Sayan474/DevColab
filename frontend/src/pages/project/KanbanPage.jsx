@@ -116,11 +116,21 @@ const KanbanPage = () => {
   }, [projectId, user]);
 
   const createTask = async () => {
-    if (!newTitle.trim()) return;
-    await api.post('/tasks', { title: newTitle, projectId, status: 'todo' });
-    setNewTitle('');
-    await loadTasks();
-  };
+  const title = newTitle.trim() || 'New Task';
+
+  const data = unwrap(
+    await api.post('/tasks', {
+      title,
+      projectId,
+      status: 'todo',
+    })
+  );
+
+  setNewTitle('');
+  await loadTasks();
+
+  setSelectedTask(data.task);
+};
 
   const createTaskForStatus = async (status) => {
     const data = unwrap(await api.post('/tasks', { title: 'New Task', projectId, status }));
@@ -264,13 +274,13 @@ const KanbanPage = () => {
               <span className="text-xs text-gray-500">{viewers.length || 1} people viewing</span>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 border border-dark-border rounded-lg p-1">
               <button onClick={() => setView('board')} className={cn("px-2 py-1 text-xs rounded-md flex items-center gap-1", view === 'board' && "bg-primary/20 text-primary")}><LayoutGrid size={14} /> Board</button>
               <button onClick={() => setView('list')} className={cn("px-2 py-1 text-xs rounded-md flex items-center gap-1", view === 'list' && "bg-primary/20 text-primary")}><List size={14} /> List</button>
               <button onClick={() => setView('calendar')} className={cn("px-2 py-1 text-xs rounded-md flex items-center gap-1", view === 'calendar' && "bg-primary/20 text-primary")}><CalendarDays size={14} /> Calendar</button>
             </div>
-            <Input placeholder="New task title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+            <Input className="w-96" placeholder="New task title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
             <Button size="sm" className="gap-2" onClick={createTask}><Plus size={14} /> New Task</Button>
           </div>
         </div>
@@ -497,9 +507,15 @@ const KanbanPage = () => {
               {(selectedTask.attachments || []).length === 0 && (
                 <p className="text-xs text-gray-500">No attachments yet.</p>
               )}
-              <div className="space-y-2">
+              <div className="flex flex-col space-y-2">
                 {(selectedTask.attachments || []).map((file) => (
-                  <a key={file._id || file.url} href={file.url} className="text-xs text-primary hover:underline" target="_blank" rel="noreferrer">
+                  <a
+                    key={file._id || file.url}
+                    href={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${file.url}`}
+                    className="text-xs text-primary hover:underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {file.filename}
                   </a>
                 ))}

@@ -53,7 +53,13 @@ const Signup = () => {
     setError("");
     try {
       await register(form.name, form.email, password);
-      navigate("/onboarding/workspace");
+      const pendingToken = localStorage.getItem('pendingInviteToken');
+      if (pendingToken) {
+        localStorage.removeItem('pendingInviteToken');
+        navigate(`/invite/accept/${pendingToken}`);
+      } else {
+        navigate('/onboarding/workspace');  // normal new user flow
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Unable to create account");
     } finally {

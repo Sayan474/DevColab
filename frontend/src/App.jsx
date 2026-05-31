@@ -15,6 +15,7 @@ import NewProjectPage from "./pages/project/NewProjectPage";
 import WorkspaceSettings from "./pages/settings/WorkspaceSettings";
 import ProfileSettings from "./pages/settings/ProfileSettings";
 import PricingPage from "./pages/upgrade/PricingPage";
+import AcceptInvite from './pages/invite/AcceptInvite';
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { WorkspaceProvider } from "./context/WorkspaceContext";
@@ -30,8 +31,17 @@ const ProtectedRoute = ({ children }) => {
 
 const WorkspaceRoute = ({ children }) => {
   const { workspaces, loading } = useWorkspace();
-  if (loading) return <div className="min-h-screen surface flex items-center justify-center text-gray-400">Loading workspace...</div>;
-  if (!workspaces.length) return <Navigate to="/onboarding/workspace" replace />;
+  
+  // Wait until loading is fully done before deciding
+  if (loading) return (
+    <div className="min-h-screen surface flex items-center justify-center text-gray-400">
+      Loading workspace...
+    </div>
+  );
+  
+  // Only redirect if loading is complete AND no workspaces exist
+  if (!loading && workspaces.length === 0) return <Navigate to="/onboarding/workspace" replace />;
+  
   return children;
 };
 
@@ -45,6 +55,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/invite/accept/:token" element={<AcceptInvite />} />
       <Route path="/onboarding/workspace" element={<ProtectedRoute><CreateWorkspace /></ProtectedRoute>} />
       <Route path="/dashboard" element={guarded(<Dashboard />)} />
       <Route path="/tasks" element={guarded(<TasksPage />)} />

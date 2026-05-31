@@ -52,8 +52,8 @@ const sendResetEmail = async (email, otp) => {
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: email,
-    subject: 'DevCollab password reset code',
-    text: `Your DevCollab password reset code is ${otp}. It expires in 10 minutes.`,
+    subject: 'DevColab password reset code',
+    text: `Your DevColab password reset code is ${otp}. It expires in 10 minutes.`,
   });
 };
 

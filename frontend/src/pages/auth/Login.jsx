@@ -34,7 +34,14 @@ const Login = () => {
     setError("");
     try {
       await login(form.email, form.password);
-      navigate("/dashboard");
+      // ADD THIS — check for pending invite after login
+    const pendingToken = localStorage.getItem('pendingInviteToken');
+    if (pendingToken) {
+      localStorage.removeItem('pendingInviteToken');
+      navigate(`/invite/accept/${pendingToken}`);
+    } else {
+      navigate('/dashboard');
+    }
     } catch (err) {
       setError(err.response?.data?.message || "Unable to log in");
     } finally {
