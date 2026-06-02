@@ -13,7 +13,7 @@ const AIPage = () => {
   const { user } = useAuth();
   const [projectName, setProjectName] = useState('');
   const [prompt, setPrompt] = useState("");
-  const [messages, setMessages] = useState([{ role: "ai", text: "Hello! I'm your DevCollab AI Assistant. How can I help you today?" }]);
+  const [messages, setMessages] = useState([{ role: "ai", text: "Hello! I'm your DevColab AI Assistant. How can I help you today?" }]);
   const [reviewInput, setReviewInput] = useState("");
   const [language, setLanguage] = useState("javascript");
   const [review, setReview] = useState(null);
@@ -102,7 +102,7 @@ const AIPage = () => {
       <div className="h-full flex gap-6 overflow-hidden">
         <div className="flex-1 flex flex-col gap-6">
           <div className="flex-1 surface rounded-2xl flex flex-col overflow-hidden border">
-            <div className="p-4 border-b dark:border-dark-border flex items-center gap-3 bg-primary/5"><div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white"><Zap size={18} /></div><div><h2 className="font-bold">DevCollab AI</h2><p className="text-[10px] text-success font-bold uppercase">Online</p></div></div>
+            <div className="p-4 border-b dark:border-dark-border flex items-center gap-3 bg-primary/5"><div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white"><Zap size={18} /></div><div><h2 className="font-bold">DevColab AI</h2><p className="text-[10px] text-success font-bold uppercase">Online</p></div></div>
             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
               {messages.map((m, i) => (
                 <div key={i} className={cn("flex gap-4 max-w-[80%]", m.role === "user" ? "ml-auto flex-row-reverse" : "")}> 

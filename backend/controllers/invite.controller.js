@@ -57,21 +57,78 @@ export const createInvite = asyncHandler(async (req, res) => {
   return ok(res, { invite, acceptUrl }, 201);
 });
 
-export const acceptInvite = asyncHandler(async (req, res) => {
+export const validateInvite = asyncHandler(async (req, res) => {
   const invite = await Invite.findOne({ token: req.params.token });
   if (!invite || invite.accepted || invite.expiresAt < new Date()) return fail(res, 'Invite is invalid or expired', 400);
   const user = await User.findOne({ email: invite.email });
-  if (!user) return ok(res, { registered: false, email: invite.email, workspaceId: invite.workspaceId });
-  const workspace = await Workspace.findById(invite.workspaceId);
-  if (!workspace.members.some((member) => member.userId.toString() === user._id.toString())) {
-    workspace.members.push({ userId: user._id, role: invite.role });
-    await workspace.save();
-    await User.findByIdAndUpdate(user._id, { $addToSet: { workspaces: workspace._id } });
+  return ok(res, { valid: true, registered: Boolean(user), email: invite.email, workspaceId: invite.workspaceId });
+});
+
+export const acceptInvite = asyncHandler(async (req, res) => {
+  console.log('🔥 acceptInvite called for token:', req.params.token, 'by user:', req.user.id)
+  const invite = await Invite.findOneAndUpdate(
+    { 
+      token: req.params.token, 
+      accepted: false,           // ← only match if NOT yet accepted
+      expiresAt: { $gt: new Date() }
+    },
+    { $set: { accepted: true } }, // ← mark accepted atomically
+    { new: true }
+  );
+
+  if (!invite || invite.expiresAt < new Date()) {
+    return fail(res, 'Invite is invalid, expired, or already used', 400);
   }
-  invite.accepted = true;
-  await invite.save();
-  await logActivity({ userId: user._id, workspaceId: workspace._id, action: 'member.joined', entityType: 'member', entityId: user._id, entityName: user.name });
-  return ok(res, { accepted: true, workspace });
+
+  // Allow already-accepted invites to pass through gracefully
+  // (handles double-call case)
+  const user = await User.findById(req.user.id);
+  if (!user) return fail(res, 'User not found', 404);
+
+  // Case-insensitive email comparison — THE KEY FIX
+  if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
+    await Invite.findByIdAndUpdate(invite._id, { $set: { accepted: false } });
+    return fail(res, 'This invite was sent to a different email address', 403);
+  }
+
+  const workspace = await Workspace.findById(invite.workspaceId);
+  if (!workspace) return fail(res, 'Workspace not found', 404);
+
+  // Check if already a member — using string comparison safely
+  const alreadyMember = workspace.members.some(
+    (m) => m.userId.toString() === user._id.toString()
+  );
+
+  if (!alreadyMember) {
+    await Workspace.findByIdAndUpdate(
+      invite.workspaceId,
+      {
+        $addToSet: {
+          members: { userId: user._id, role: invite.role, joinedAt: new Date() }
+        }
+      },
+      { new: true }
+    );
+    await User.findByIdAndUpdate(user._id, {
+      $addToSet: { workspaces: workspace._id }
+    });
+  }
+
+  // Mark as accepted regardless — prevents double processing
+  if (!invite.accepted) {
+    invite.accepted = true;
+    await invite.save();
+    await logActivity({
+      userId: user._id,
+      workspaceId: workspace._id,
+      action: 'member.joined',
+      entityType: 'member',
+      entityId: user._id,
+      entityName: user.name,
+    });
+  }
+
+  return ok(res, { accepted: true, workspace, message: `Joined ${workspace.name}` });
 });
 
 export const listPendingInvites = asyncHandler(async (req, res) => {

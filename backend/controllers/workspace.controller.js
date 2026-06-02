@@ -73,7 +73,8 @@ export const deleteWorkspace = asyncHandler(async (req, res) => {
 export const listMembers = asyncHandler(async (req, res) => {
   const workspace = await Workspace.findById(req.params.workspaceId).populate('members.userId', 'name email avatar bio skills githubUrl');
   if (!workspace) return fail(res, 'Workspace not found', 404);
-  return ok(res, { members: workspace.members });
+  const validMembers = workspace.members.filter(m => m.userId != null);
+  return ok(res, { members: validMembers });
 });
 
 export const changeMemberRole = asyncHandler(async (req, res) => {

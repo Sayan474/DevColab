@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, ChevronLeft, Upload, X, Users, CreditCard, Check } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Upload, X, Check } from 'lucide-react';
 import { Button, Input } from '../../components/ui';
 import { cn } from "../../assets/utils";
 import { useWorkspace } from "../../context/useWorkspace";
@@ -16,7 +16,7 @@ const CreateWorkspace = () => {
   const fileInputRef = useRef(null);
   const { createWorkspace, createProject } = useWorkspace();
   const navigate = useNavigate();
-  const nextStep = () => setStep(s => Math.min(s + 1, 3));
+  const nextStep = () => setStep(s => Math.min(s + 1, 2));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
   const addEmail = (e) => {
     e.preventDefault();
@@ -57,7 +57,7 @@ const CreateWorkspace = () => {
       const payload = { name };
       if (logoPreview) payload.avatar = logoPreview;
       const workspace = await createWorkspace(payload);
-      await createProject({ workspaceId: workspace._id || workspace.id, name: "DevCollab Platform", description: "Your first collaboration project", color: "#3B82F6" });
+      await createProject({ workspaceId: workspace._id || workspace.id, name: "DevColab Platform", description: "Your first collaboration project", color: "#3B82F6" });
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Unable to create workspace");
@@ -71,7 +71,7 @@ const CreateWorkspace = () => {
         {/* Progress Bar */}
         <div className="flex justify-between mb-12 relative">
           <div className="absolute top-1/2 left-0 w-full h-0.5 bg-dark-border -translate-y-1/2 -z-0" />
-          {[1, 2, 3].map((s) => (
+          {[1, 2].map((s) => (
             <div 
               key={s} 
               className={cn(
@@ -135,7 +135,7 @@ const CreateWorkspace = () => {
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-gray-500">Workspace URL</label>
                     <div className="flex items-center gap-2">
-                        <span className="text-gray-500 text-sm whitespace-nowrap">devcollab.com/</span>
+                        <span className="text-gray-500 text-sm whitespace-nowrap">devcolab.com/</span>
                         <Input 
                             placeholder="my-workspace" 
                             className="flex-1"
@@ -174,59 +174,6 @@ const CreateWorkspace = () => {
               </div>
             </div>
           )}
-          {step === 3 && (
-            <div className="space-y-6">
-              <div className="text-center">
-                <h2 className="text-3xl font-bold mb-2">Pick a plan</h2>
-                <p className="text-gray-500">Choose the best fit for your team size.</p>
-              </div>
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Free Plan */}
-                <div className="surface p-6 rounded-2xl border-2 border-transparent hover:border-dark-border transition-all cursor-pointer group">
-                    <h3 className="text-xl font-bold mb-1">Starter</h3>
-                    <p className="text-gray-500 text-sm mb-4">For individuals & small teams</p>
-                    <div className="flex items-baseline gap-1 mb-6">
-                        <span className="text-4xl font-bold">$0</span>
-                        <span className="text-gray-500">/mo</span>
-                    </div>
-                    <ul className="space-y-3 mb-8">
-                        <li className="flex items-center gap-3 text-sm text-gray-400">
-                            <Check size={16} className="text-success" /> Up to 3 projects
-                        </li>
-                        <li className="flex items-center gap-3 text-sm text-gray-400">
-                            <Check size={16} className="text-success" /> 5 team members
-                        </li>
-                        <li className="flex items-center gap-3 text-sm text-gray-400">
-                            <X size={16} className="text-danger" /> AI Assistant
-                        </li>
-                    </ul>
-                    <Button variant="secondary" className="w-full">Choose Starter</Button>
-                </div>
-                {/* Pro Plan */}
-                <div className="bg-primary/10 border-2 border-primary p-6 rounded-2xl relative overflow-hidden group cursor-pointer">
-                    <div className="absolute top-0 right-0 bg-primary text-white px-4 py-1 text-[10px] font-bold uppercase tracking-widest rounded-bl-xl">Popular</div>
-                    <h3 className="text-xl font-bold mb-1 text-primary">Pro Team</h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">Everything in Starter, plus more.</p>
-                    <div className="flex items-baseline gap-1 mb-6">
-                        <span className="text-4xl font-bold text-primary">$19</span>
-                        <span className="text-gray-500">/mo</span>
-                    </div>
-                    <ul className="space-y-3 mb-8">
-                        <li className="flex items-center gap-3 text-sm">
-                            <Check size={16} className="text-primary" /> Unlimited projects
-                        </li>
-                        <li className="flex items-center gap-3 text-sm">
-                            <Check size={16} className="text-primary" /> Unlimited members
-                        </li>
-                        <li className="flex items-center gap-3 text-sm">
-                            <Check size={16} className="text-primary" /> Advanced AI Support
-                        </li>
-                    </ul>
-                    <Button className="w-full">Upgrade to Pro</Button>
-                </div>
-              </div>
-            </div>
-          )}
           <div className="flex justify-between pt-8">
             <Button 
                 variant="ghost" 
@@ -237,14 +184,14 @@ const CreateWorkspace = () => {
             </Button>
             <Button 
                 onClick={
-                step === 3
+                step === 2
                   ? completeSetup
                   : nextStep
               }
               className="gap-2"
               disabled={(step === 1 && !name) || submitting}
             >
-              {step === 3 ? (submitting ? "Creating..." : "Complete Setup") : "Continue"}{" "}
+              {step === 2 ? (submitting ? "Creating..." : "Complete Setup") : "Continue"}{" "}
               <ChevronRight size={18} />
             </Button>
           </div>

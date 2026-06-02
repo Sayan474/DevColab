@@ -3,12 +3,19 @@ import User from '../models/User.js';
 
 const auth = async (req, res, next) => {
   try {
-    const header = req.headers.authorization || '';
-    const token = header.startsWith('Bearer ') ? header.slice(7) : null;
-    if (!token) return res.status(401).json({ success: false, message: 'Authentication token required' });
+    // Read token from httpOnly cookie instead of Authorization header
+    const token = req.cookies?.devcollab_token;
+
+    if (!token) {
+      return res.status(401).json({ success: false, message: 'Authentication token required' });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id).select('-passwordHash');
-    if (!user) return res.status(401).json({ success: false, message: 'User not found' });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'User not found' });
+    }
+
     req.user = { id: user._id.toString(), _id: user._id, email: user.email, name: user.name };
     req.currentUser = user;
     next();

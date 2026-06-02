@@ -6,8 +6,7 @@ import {
   Bird as Twitter, 
   Lock, 
   Camera,
-  LogOut,
-  ChevronRight
+  LogOut
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import api, { unwrap } from '../../lib/api';

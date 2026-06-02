@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { PageShell } from '../../components/layout/PageShell';
 import { Badge, Avatar, Button, Input } from '../../components/ui';
 import { cn } from '../../assets/utils';
-import { Plus, MoreHorizontal, X, LayoutGrid, List, CalendarDays, Upload, Trash2 } from 'lucide-react';
+import { Plus, X, LayoutGrid, List, CalendarDays, Upload, Trash2 } from 'lucide-react';
 import { KanbanColumn } from '../../components/kanban/KanbanColumn';
 import MarkdownRenderer from '../../components/markdown/MarkdownRenderer';
 import api, { unwrap } from '../../lib/api';

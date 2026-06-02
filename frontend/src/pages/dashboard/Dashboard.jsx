@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { PageShell } from "../../components/layout/PageShell";
 import { Button, Badge, Avatar } from "../../components/ui";
 import { cn } from "../../assets/utils";
-import { Plus, ArrowRight, MessageSquare, Settings, Calendar, Zap, BarChart2, Clock } from "lucide-react";
+import { Plus, ArrowRight, MessageSquare, Settings, Zap, BarChart2, Clock } from "lucide-react";
 import { useAuth } from "../../context/useAuth";
 import { useWorkspace } from "../../context/useWorkspace";
 import api, { unwrap } from "../../lib/api";
@@ -25,7 +25,6 @@ const Dashboard = () => {
       if (!currentWorkspace) return;
       const workspaceId = currentWorkspace._id || currentWorkspace.id;
       const activityData = unwrap(await api.get(`/activity/workspace/${workspaceId}?limit=4`));
-      console.log(activityData.activities);
       setActivities(activityData.activities || []);
       const taskLists = await Promise.all(projects.slice(0, 4).map((project) => api.get(`/tasks/project/${project._id || project.id}`)));
       setTasks(taskLists.flatMap((response) => unwrap(response).tasks || []));
@@ -36,7 +35,6 @@ const Dashboard = () => {
   const pendingTasks = tasks.filter((task) => taskAssigneeId(task)?.toString() === (user?._id || user?.id) && task.status !== "done");
   const primaryProjectId = projects[0]?._id || projects[0]?.id;
 
-  const handleSchedule = () => navigate('/tasks');
   const handleNewProject = () => navigate('/projects/new');
   const handleViewFeed = () => navigate(primaryProjectId ? `/project/${primaryProjectId}/activity` : '/projects');
 
@@ -49,7 +47,6 @@ const Dashboard = () => {
             <p className="text-gray-500">Here's what's happening across your projects today.</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="secondary" className="gap-2" onClick={handleSchedule}><Calendar size={18} /> My Schedule</Button>
             <Button className="gap-2" onClick={handleNewProject}><Plus size={18} /> New Project</Button>
           </div>
         </div>
@@ -71,7 +68,7 @@ const Dashboard = () => {
           <div className="lg:col-span-2 space-y-10">
             <section className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold flex items-center gap-2">My Pending Tasks <Badge variant="primary">{pendingTasks.length}</Badge></h2>
+                <h2 className="text-xl font-bold flex items-center gap-2">Pending Tasks <Badge variant="primary">{pendingTasks.length}</Badge></h2>
               </div>
               <div className="space-y-2">
                 {pendingTasks.length === 0 && <div className="surface p-6 rounded-xl text-sm text-gray-500">No pending tasks assigned to you.</div>}

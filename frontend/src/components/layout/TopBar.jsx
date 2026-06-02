@@ -51,7 +51,7 @@ export const TopBar = ({ breadcrumbs = [] }) => {
       <div className="flex items-center gap-3">
         {/* Breadcrumbs */}
         <nav className="flex items-center text-xs text-gray-500 font-medium">
-          <button type="button" onClick={() => navigate('/dashboard')} className="hover:text-primary">DevCollab</button>
+          <button type="button" onClick={() => navigate('/dashboard')} className="hover:text-primary">DevColab</button>
           {normalizedCrumbs.map((crumb, idx) => (
             <Fragment key={`${crumb.label}-${idx}`}>
               <ChevronRight size={14} className="mx-1" />

@@ -1,11 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  Kanban,
-  FileCode,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Kanban, FileCode, Eye, EyeOff } from "lucide-react";
 
 import { Button, Input, Modal } from "../../components/ui";
 import { useAuth } from "../../context/useAuth";
@@ -13,7 +8,11 @@ import api, { unwrap } from "../../lib/api";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState({
+    email: searchParams.get("email") || "",
+    password: "",
+  });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
@@ -34,14 +33,15 @@ const Login = () => {
     setError("");
     try {
       await login(form.email, form.password);
-      // ADD THIS — check for pending invite after login
-    const pendingToken = localStorage.getItem('pendingInviteToken');
-    if (pendingToken) {
-      localStorage.removeItem('pendingInviteToken');
-      navigate(`/invite/accept/${pendingToken}`);
-    } else {
-      navigate('/dashboard');
-    }
+      const pendingToken =
+        localStorage.getItem("pendingInviteToken") ||
+        searchParams.get("invite");
+      if (pendingToken) {
+        localStorage.removeItem("pendingInviteToken");
+        navigate(`/invite/accept/${pendingToken}`);
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Unable to log in");
     } finally {
@@ -84,7 +84,13 @@ const Login = () => {
     setResetError("");
     setResetMessage("");
     try {
-      const data = unwrap(await api.post("/auth/password/reset", { email: resetEmail, otp: resetOtp, password: resetPassword }));
+      const data = unwrap(
+        await api.post("/auth/password/reset", {
+          email: resetEmail,
+          otp: resetOtp,
+          password: resetPassword,
+        }),
+      );
       if (data?.reset) {
         setResetMessage("Password updated. You can now log in.");
         setResetStep("done");
@@ -100,7 +106,6 @@ const Login = () => {
     <div className="flex min-h-screen bg-black text-white overflow-hidden">
       {/* LEFT PANEL */}
       <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-black p-12 flex-col justify-between">
-
         {/* Background Noise */}
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
 
@@ -116,9 +121,7 @@ const Login = () => {
               <span className="text-white text-2xl font-black">D</span>
             </div>
 
-            <span className="text-3xl font-black tracking-tight">
-              DevCollab
-            </span>
+            <span className="text-3xl font-black tracking-tight">DevColab</span>
           </div>
 
           {/* Heading */}
@@ -169,7 +172,6 @@ const Login = () => {
 
       {/* RIGHT PANEL */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-10 relative bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.08),transparent_40%)]">
-
         {/* Login Card */}
         <div
           className="
@@ -199,11 +201,12 @@ const Login = () => {
           </div>
 
           <div className="space-y-5">
-            <form
-              className="space-y-5"
-              onSubmit={handleSubmit}
-            >
-              {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{error}</p>}
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              {error && (
+                <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+                  {error}
+                </p>
+              )}
               {/* Email */}
               <Input
                 label="Email Address"
@@ -211,7 +214,9 @@ const Login = () => {
                 placeholder="john@example.com"
                 required
                 value={form.email}
-                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, email: e.target.value }))
+                }
                 className="
                   bg-white/5
                   border-white/10
@@ -224,10 +229,10 @@ const Login = () => {
 
               {/* Password */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between pr-1">
-                  <label className="text-sm font-medium text-zinc-300">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-zinc-400">
                     Password
-                  </label>
+                  </span>
 
                   <a
                     href="#"
@@ -247,7 +252,9 @@ const Login = () => {
                     placeholder="••••••••"
                     required
                     value={form.password}
-                    onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, password: e.target.value }))
+                    }
                     className="
                       bg-white/5
                       border-white/10
@@ -267,13 +274,10 @@ const Login = () => {
                         text-zinc-400
                         hover:text-white
                         transition
+                        cursor-pointer
                       "
                     >
-                      {showPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
@@ -292,7 +296,6 @@ const Login = () => {
                       accent-indigo-500
                     "
                   />
-
                   Remember me
                 </label>
               </div>
@@ -332,7 +335,11 @@ const Login = () => {
               </span>
 
               <Link
-                to="/signup"
+                to={
+                  searchParams.get("invite")
+                    ? `/signup?invite=${searchParams.get("invite")}${form.email ? `&email=${encodeURIComponent(form.email)}` : ""}`
+                    : "/signup"
+                }
                 className="text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition"
               >
                 Sign up
@@ -346,20 +353,40 @@ const Login = () => {
         isOpen={resetOpen}
         onClose={() => setResetOpen(false)}
         title="Reset your password"
-        footer={(
+        footer={
           <>
             {resetStep === "request" && (
-              <Button variant="secondary" onClick={() => setResetOpen(false)}>Cancel</Button>
+              <Button
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={() => setResetOpen(false)}
+              >
+                Cancel
+              </Button>
             )}
             {resetStep === "verify" && (
-              <Button variant="secondary" onClick={() => setResetStep("request")}>Back</Button>
+              <Button
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={() => setResetStep("request")}
+              >
+                Back
+              </Button>
             )}
           </>
-        )}
+        }
       >
         <div className="space-y-4">
-          {resetError && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{resetError}</p>}
-          {resetMessage && <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">{resetMessage}</p>}
+          {resetError && (
+            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+              {resetError}
+            </p>
+          )}
+          {resetMessage && (
+            <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">
+              {resetMessage}
+            </p>
+          )}
 
           {resetStep === "request" && (
             <>
@@ -370,7 +397,11 @@ const Login = () => {
                 value={resetEmail}
                 onChange={(event) => setResetEmail(event.target.value)}
               />
-              <Button className="w-full" onClick={requestOtp} disabled={!resetEmail || resetLoading}>
+              <Button
+                className="w-full cursor-pointer"
+                onClick={requestOtp}
+                disabled={!resetEmail || resetLoading}
+              >
                 {resetLoading ? "Sending..." : "Send reset code"}
               </Button>
             </>
@@ -402,14 +433,21 @@ const Login = () => {
                 value={resetConfirm}
                 onChange={(event) => setResetConfirm(event.target.value)}
               />
-              <Button className="w-full" onClick={resetPasswordWithOtp} disabled={resetLoading || !resetOtp || !resetPassword}>
+              <Button
+                className="w-full"
+                onClick={resetPasswordWithOtp}
+                disabled={resetLoading || !resetOtp || !resetPassword}
+              >
                 {resetLoading ? "Updating..." : "Update password"}
               </Button>
             </>
           )}
 
           {resetStep === "done" && (
-            <Button className="w-full" onClick={() => setResetOpen(false)}>
+            <Button
+              className="w-full cursor-pointer"
+              onClick={() => setResetOpen(false)}
+            >
               Back to login
             </Button>
           )}

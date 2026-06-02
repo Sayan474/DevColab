@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser'; // ← NEW
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
@@ -37,7 +38,11 @@ const io = new Server(httpServer, {
 setIO(io);
 registerSockets(io);
 
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+app.use(cors({
+  origin: CLIENT_URL,
+  credentials: true, // ← CRITICAL — allows cookies to be sent cross-origin
+}));
+app.use(cookieParser()); // ← NEW — must be before any route that reads cookies
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

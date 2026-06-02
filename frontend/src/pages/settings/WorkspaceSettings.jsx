@@ -9,10 +9,8 @@ import api, { unwrap } from '../../lib/api';
 import {
   Settings,
   Users,
-  CreditCard,
   Shield,
   Trash2,
-  Plus,
   Mail,
   Send,
   RefreshCw,
@@ -55,7 +53,6 @@ const WorkspaceSettings = () => {
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
     { id: 'members', label: 'Members', icon: Users },
-    { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'security', label: 'Security', icon: Shield },
   ];
 
@@ -432,19 +429,16 @@ const WorkspaceSettings = () => {
           )}
 
           {/* ── BILLING ── */}
-          {activeTab === 'billing' && (
+          {activeTab === '' && (
             <div className="space-y-8">
-              <h2 className="text-2xl font-bold">Billing & Usage</h2>
+              <h2 className="text-2xl font-bold">Workspace Usage</h2>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="surface p-6 rounded-2xl border border-dark-border">
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">Current Plan</h3>
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">Workspace</h3>
                   <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-3xl font-bold capitalize">{currentWorkspace?.plan || 'Free'}</span>
+                    <span className="text-3xl font-bold capitalize">{currentWorkspace?.name || 'Workspace'}</span>
                   </div>
                   <p className="text-sm text-gray-500 mb-6">Perfect for small teams getting started.</p>
-                  <Button onClick={() => navigate('/upgrade')} className="w-full">
-                    Upgrade to Pro
-                  </Button>
                 </div>
                 <div className="surface p-6 rounded-2xl border border-dark-border">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">Usage</h3>

@@ -2,8 +2,6 @@ import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Home,
-  CheckSquare,
-  Inbox,
   Folder,
   ChevronDown,
   User,
@@ -23,8 +21,6 @@ export const Sidebar = ({ isCollapsed }) => {
 
   const navItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
-    { icon: CheckSquare, label: "My Tasks", path: "/tasks" },
-    { icon: Inbox, label: "Inbox", path: "/inbox", badge: 3 },
     { icon: Folder, label: "All Projects", path: "/projects" },
   ];
 
@@ -44,7 +40,7 @@ export const Sidebar = ({ isCollapsed }) => {
           <img
             src={
               currentWorkspace?.avatar ||
-              "https://ui-avatars.com/api/?name=DevCollab"
+              "https://ui-avatars.com/api/?name=DevColab"
             }
             alt=""
             className="w-8 h-8 rounded-md"

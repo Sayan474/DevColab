@@ -32,4 +32,18 @@ workspaceSchema.set('toJSON', {
   },
 });
 
+// Prevent duplicate members at query level
+// This does NOT enforce at DB level but works with the controller's alreadyMember check
+workspaceSchema.pre('save', function (next) {
+  const seen = new Set();
+  this.members = this.members.filter((m) => {
+    if (!m.userId) return false;
+    const id = m.userId.toString();
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+  next();
+});
+
 export default mongoose.model('Workspace', workspaceSchema);
