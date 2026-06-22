@@ -46,12 +46,8 @@ export default {
       },
     },
   },
-<<<<<<< HEAD
   plugins: [
     flowbite.plugin(),
+    typography,
   ],
-}
-=======
-  plugins: [typography],
-}
->>>>>>> cef88b040c9d2cb34cf94b9d8c04924d59bba6bb
+};

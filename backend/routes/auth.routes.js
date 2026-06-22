@@ -2,15 +2,17 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 import passport from 'passport';
 import auth from '../middleware/auth.js';
+
+// Clean, combined import for all auth controllers
 import { 
   login, 
   me, 
   register, 
+  logout,
   requestPasswordReset, 
   resetPasswordWithOtp, 
   oAuthCallback 
 } from '../controllers/auth.controller.js';
-import { login, me, register, logout, requestPasswordReset, resetPasswordWithOtp } from '../controllers/auth.controller.js';
 
 const router = Router();
 
@@ -26,6 +28,7 @@ router.post('/login', [
 ], login);
 
 router.post('/logout', logout);
+
 router.post('/password/otp', [
   body('email').isEmail().withMessage('Valid email is required'),
 ], requestPasswordReset);
