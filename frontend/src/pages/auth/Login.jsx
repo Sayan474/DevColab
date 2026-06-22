@@ -1,11 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  Kanban,
-  FileCode,
-  Eye,
-  EyeOff,
-} from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Kanban, FileCode, Eye, EyeOff } from "lucide-react";
 
 import { Button, Input, Modal } from "../../components/ui";
 import { useAuth } from "../../context/useAuth";
@@ -13,7 +8,11 @@ import api, { unwrap } from "../../lib/api";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [searchParams] = useSearchParams();
+  const [form, setForm] = useState({
+    email: searchParams.get("email") || "",
+    password: "",
+  });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
@@ -34,7 +33,15 @@ const Login = () => {
     setError("");
     try {
       await login(form.email, form.password);
-      navigate("/dashboard");
+      const pendingToken =
+        localStorage.getItem("pendingInviteToken") ||
+        searchParams.get("invite");
+      if (pendingToken) {
+        localStorage.removeItem("pendingInviteToken");
+        navigate(`/invite/accept/${pendingToken}`);
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Unable to log in");
     } finally {
@@ -77,7 +84,13 @@ const Login = () => {
     setResetError("");
     setResetMessage("");
     try {
-      const data = unwrap(await api.post("/auth/password/reset", { email: resetEmail, otp: resetOtp, password: resetPassword }));
+      const data = unwrap(
+        await api.post("/auth/password/reset", {
+          email: resetEmail,
+          otp: resetOtp,
+          password: resetPassword,
+        }),
+      );
       if (data?.reset) {
         setResetMessage("Password updated. You can now log in.");
         setResetStep("done");
@@ -89,11 +102,14 @@ const Login = () => {
     }
   };
 
+  const handleSocialLogin = (provider) => {
+    window.location.href = `http://localhost:5000/api/auth/${provider}`;
+  };
+
   return (
     <div className="flex min-h-screen bg-black text-white overflow-hidden">
       {/* LEFT PANEL */}
       <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-black p-12 flex-col justify-between">
-
         {/* Background Noise */}
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
 
@@ -109,9 +125,7 @@ const Login = () => {
               <span className="text-white text-2xl font-black">D</span>
             </div>
 
-            <span className="text-3xl font-black tracking-tight">
-              DevCollab
-            </span>
+            <span className="text-3xl font-black tracking-tight">DevColab</span>
           </div>
 
           {/* Heading */}
@@ -162,7 +176,6 @@ const Login = () => {
 
       {/* RIGHT PANEL */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-10 relative bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.08),transparent_40%)]">
-
         {/* Login Card */}
         <div
           className="
@@ -192,11 +205,12 @@ const Login = () => {
           </div>
 
           <div className="space-y-5">
-            <form
-              className="space-y-5"
-              onSubmit={handleSubmit}
-            >
-              {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{error}</p>}
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              {error && (
+                <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+                  {error}
+                </p>
+              )}
               {/* Email */}
               <Input
                 label="Email Address"
@@ -204,7 +218,9 @@ const Login = () => {
                 placeholder="john@example.com"
                 required
                 value={form.email}
-                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, email: e.target.value }))
+                }
                 className="
                   bg-white/5
                   border-white/10
@@ -217,10 +233,10 @@ const Login = () => {
 
               {/* Password */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between pr-1">
-                  <label className="text-sm font-medium text-zinc-300">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-zinc-400">
                     Password
-                  </label>
+                  </span>
 
                   <a
                     href="#"
@@ -240,7 +256,9 @@ const Login = () => {
                     placeholder="••••••••"
                     required
                     value={form.password}
-                    onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, password: e.target.value }))
+                    }
                     className="
                       bg-white/5
                       border-white/10
@@ -260,13 +278,10 @@ const Login = () => {
                         text-zinc-400
                         hover:text-white
                         transition
+                        cursor-pointer
                       "
                     >
-                      {showPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
@@ -285,7 +300,6 @@ const Login = () => {
                       accent-indigo-500
                     "
                   />
-
                   Remember me
                 </label>
               </div>
@@ -311,6 +325,43 @@ const Login = () => {
                 {submitting ? "Signing in..." : "Log In"}
               </Button>
             </form>
+
+            {/* --- SOCIAL LOGIN SECTION --- */}
+            <div className="flex items-center gap-3 my-6">
+              <hr className="flex-1 border-white/10" />
+              <span className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
+                Or continue with
+              </span>
+              <hr className="flex-1 border-white/10" />
+            </div>
+
+            <div className="flex gap-4">
+              <Button
+                type="button"
+                className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all rounded-xl py-2.5 shadow-lg cursor-pointer"
+                onClick={() => handleSocialLogin('google')}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                </svg>
+                Google
+              </Button>
+
+              <Button
+                type="button"
+                className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 text-white transition-all rounded-xl py-2.5 shadow-lg cursor-pointer"
+                onClick={() => handleSocialLogin('github')}
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                </svg>
+                GitHub
+              </Button>
+            </div>
+            {/* --- END SOCIAL LOGIN SECTION --- */}
           </div>
 
           {/* Bottom */}
@@ -325,7 +376,11 @@ const Login = () => {
               </span>
 
               <Link
-                to="/signup"
+                to={
+                  searchParams.get("invite")
+                    ? `/signup?invite=${searchParams.get("invite")}${form.email ? `&email=${encodeURIComponent(form.email)}` : ""}`
+                    : "/signup"
+                }
                 className="text-sm font-semibold text-indigo-400 hover:text-indigo-300 transition"
               >
                 Sign up
@@ -339,20 +394,40 @@ const Login = () => {
         isOpen={resetOpen}
         onClose={() => setResetOpen(false)}
         title="Reset your password"
-        footer={(
+        footer={
           <>
             {resetStep === "request" && (
-              <Button variant="secondary" onClick={() => setResetOpen(false)}>Cancel</Button>
+              <Button
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={() => setResetOpen(false)}
+              >
+                Cancel
+              </Button>
             )}
             {resetStep === "verify" && (
-              <Button variant="secondary" onClick={() => setResetStep("request")}>Back</Button>
+              <Button
+                variant="secondary"
+                className="cursor-pointer"
+                onClick={() => setResetStep("request")}
+              >
+                Back
+              </Button>
             )}
           </>
-        )}
+        }
       >
         <div className="space-y-4">
-          {resetError && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{resetError}</p>}
-          {resetMessage && <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">{resetMessage}</p>}
+          {resetError && (
+            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">
+              {resetError}
+            </p>
+          )}
+          {resetMessage && (
+            <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">
+              {resetMessage}
+            </p>
+          )}
 
           {resetStep === "request" && (
             <>
@@ -363,7 +438,11 @@ const Login = () => {
                 value={resetEmail}
                 onChange={(event) => setResetEmail(event.target.value)}
               />
-              <Button className="w-full" onClick={requestOtp} disabled={!resetEmail || resetLoading}>
+              <Button
+                className="w-full cursor-pointer"
+                onClick={requestOtp}
+                disabled={!resetEmail || resetLoading}
+              >
                 {resetLoading ? "Sending..." : "Send reset code"}
               </Button>
             </>
@@ -395,14 +474,21 @@ const Login = () => {
                 value={resetConfirm}
                 onChange={(event) => setResetConfirm(event.target.value)}
               />
-              <Button className="w-full" onClick={resetPasswordWithOtp} disabled={resetLoading || !resetOtp || !resetPassword}>
+              <Button
+                className="w-full"
+                onClick={resetPasswordWithOtp}
+                disabled={resetLoading || !resetOtp || !resetPassword}
+              >
                 {resetLoading ? "Updating..." : "Update password"}
               </Button>
             </>
           )}
 
           {resetStep === "done" && (
-            <Button className="w-full" onClick={() => setResetOpen(false)}>
+            <Button
+              className="w-full cursor-pointer"
+              onClick={() => setResetOpen(false)}
+            >
               Back to login
             </Button>
           )}

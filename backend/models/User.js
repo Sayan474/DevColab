@@ -4,7 +4,12 @@ import bcrypt from 'bcryptjs';
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  passwordHash: { type: String, required: true },
+
+  passwordHash: { type: String }, 
+  
+  googleId: { type: String, default: null },
+  githubId: { type: String, default: null },
+
   avatar: { type: String, default: '' },
   bio: { type: String, default: '' },
   skills: [{ type: String }],
@@ -17,6 +22,7 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.method('comparePassword', function comparePassword(plain) {
+  if (!this.passwordHash) return false;
   return bcrypt.compare(plain, this.passwordHash);
 });
 

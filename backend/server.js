@@ -7,6 +7,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+
+import passport from 'passport';
+import './utils/passport.js'; 
+
 import connectDB from './config/db.js';
 import Snippet from './models/Snippet.js';
 import { setIO } from './config/socket.js';
@@ -41,6 +45,8 @@ app.use(cors({ origin: CLIENT_URL, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.use(passport.initialize());
 
 app.get('/health', (req, res) => res.json({ success: true, message: 'DevCollab backend is healthy' }));
 app.use('/api/auth', authRoutes);

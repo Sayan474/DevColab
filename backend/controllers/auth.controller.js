@@ -85,3 +85,14 @@ export const resetPasswordWithOtp = asyncHandler(async (req, res) => {
   await user.save();
   return ok(res, { reset: true });
 });
+
+export const oAuthCallback = asyncHandler(async (req, res) => {
+  const token = signToken(req.user);
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000 
+  });
+  res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+});

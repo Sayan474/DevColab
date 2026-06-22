@@ -1,14 +1,22 @@
 import { Router } from 'express';
-import auth from '../middleware/auth.js';
-import { requireRole } from '../middleware/role.js';
-import { createPage, deletePage, getPage, listPages, listVersions, updatePage } from '../controllers/wiki.controller.js';
+
+import { getWiki, updateWiki, getPage } from '../controllers/wiki.controller.js';
+import auth from '../middleware/auth.js'; 
 
 const router = Router();
+
+
 router.use(auth);
-router.post('/', requireRole('member'), createPage);
-router.get('/project/:projectId', requireRole('viewer'), listPages);
-router.get('/:pageId', getPage);
-router.put('/:pageId', updatePage);
-router.delete('/:pageId', deletePage);
-router.get('/:pageId/versions', listVersions);
+
+
+router.get('/project/:projectId', getWiki);
+
+
+router.get('/:id', getPage);
+
+
+router.post('/', updateWiki);
+router.put('/', updateWiki);
+router.put('/:id', updateWiki);
+
 export default router;
