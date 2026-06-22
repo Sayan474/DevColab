@@ -45,6 +45,31 @@
     @apply bg-light-surface border-light-border dark:bg-dark-surface dark:border-dark-border border;
   }
 
+  .markdown-renderer {
+    @apply text-slate-700 dark:text-slate-300;
+  }
+
+  .markdown-renderer :is(h1, h2, h3, h4, h5, h6) {
+    scroll-margin-top: 6rem;
+  }
+
+  .markdown-renderer p:last-child,
+  .markdown-renderer ul:last-child,
+  .markdown-renderer ol:last-child,
+  .markdown-renderer blockquote:last-child,
+  .markdown-renderer pre:last-child,
+  .markdown-renderer table:last-child {
+    margin-bottom: 0;
+  }
+
+  .markdown-renderer pre code {
+    @apply block bg-transparent p-0 text-inherit;
+  }
+
+  .markdown-renderer :not(pre) > code {
+    @apply border-slate-200 dark:border-slate-800;
+  }
+
   .glass {
     @apply backdrop-blur-sm bg-white/5 border border-white/10;
   }
@@ -77,6 +102,16 @@
 
   .card-interactive {
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg active:scale-[0.99];
+  }
+
+  select option {
+    color: #111827;
+    background-color: #ffffff;
+  }
+
+  .dark select option {
+    color: #f3f4f6;
+    background-color: #111113;
   }
 }
 

@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { Button, Input } from "../../components/ui";
 import { cn } from "../../assets/utils";
 import { useAuth } from "../../context/useAuth";
 
 const Signup = () => {
+  const [searchParams] = useSearchParams();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "" });
+  const [form, setForm] = useState({ name: "", email: searchParams.get('email') || "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { register } = useAuth();
@@ -53,7 +54,13 @@ const Signup = () => {
     setError("");
     try {
       await register(form.name, form.email, password);
-      navigate("/onboarding/workspace");
+      const pendingToken = localStorage.getItem('pendingInviteToken') || searchParams.get('invite');
+      if (pendingToken) {
+        localStorage.removeItem('pendingInviteToken');
+        navigate(`/invite/accept/${pendingToken}`);
+      } else {
+        navigate('/onboarding/workspace');
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Unable to create account");
     } finally {

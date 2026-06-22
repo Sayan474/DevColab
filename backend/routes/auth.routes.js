@@ -10,6 +10,7 @@ import {
   resetPasswordWithOtp, 
   oAuthCallback 
 } from '../controllers/auth.controller.js';
+import { login, me, register, logout, requestPasswordReset, resetPasswordWithOtp } from '../controllers/auth.controller.js';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.post('/login', [
   body('password').notEmpty().withMessage('Password is required'),
 ], login);
 
+router.post('/logout', logout);
 router.post('/password/otp', [
   body('email').isEmail().withMessage('Valid email is required'),
 ], requestPasswordReset);

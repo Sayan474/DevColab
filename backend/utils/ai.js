@@ -17,7 +17,12 @@ export const askGroq = async (prompt, { json = false } = {}) => {
     model: MODEL,
     temperature: json ? 0.1 : 0.3,
     messages: [
-      { role: 'system', content: json ? 'Return only valid JSON. Do not include markdown.' : 'You are a concise project assistant.' },
+      {
+        role: 'system',
+        content: json
+          ? 'Return only valid JSON. Do not include markdown or HTML.'
+          : 'You are a concise project assistant. Output GitHub-flavored markdown only. Never use HTML tags. Avoid markdown tables unless absolutely necessary. Prefer headings, bullets, and short code blocks. Keep responses professional and readable in dark mode.',
+      },
       { role: 'user', content: prompt },
     ],
   });

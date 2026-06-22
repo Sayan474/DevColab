@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser'; 
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
@@ -41,7 +42,11 @@ const io = new Server(httpServer, {
 setIO(io);
 registerSockets(io);
 
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+app.use(cors({
+  origin: CLIENT_URL,
+  credentials: true, 
+}));
+app.use(cookieParser()); 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -49,6 +54,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(passport.initialize());
 
 app.get('/health', (req, res) => res.json({ success: true, message: 'DevCollab backend is healthy' }));
+app.get('/health', (req, res) => res.json({ success: true, message: 'DevColab backend is healthy' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/workspaces', workspaceRoutes);
@@ -64,7 +70,7 @@ app.use(errorHandler);
 
 connectDB()
   .then(() => {
-    httpServer.listen(PORT, () => console.log(`DevCollab backend running on port ${PORT}`));
+    httpServer.listen(PORT, () => console.log(`DevColab backend running on port ${PORT}`));
 
     Snippet.syncIndexes()
       .then(() => console.log('Snippet indexes synchronized'))
@@ -73,6 +79,6 @@ connectDB()
       });
   })
   .catch((error) => {
-    console.error('Failed to start DevCollab backend:', error.message);
+    console.error('Failed to start DevColab backend:', error.message);
     process.exit(1);
   });

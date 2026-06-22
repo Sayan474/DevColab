@@ -19,7 +19,7 @@ export const createInvite = asyncHandler(async (req, res) => {
     invitedBy: req.user.id,
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
-  const acceptUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/invite/${token}`;
+  const acceptUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/invite/accept/${token}`;
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     const error = new Error('Email credentials are not configured');
     error.status = 503;
@@ -27,26 +27,108 @@ export const createInvite = asyncHandler(async (req, res) => {
     throw error;
   }
   const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS } });
-  await transporter.sendMail({ from: process.env.EMAIL_USER, to: email, subject: 'You are invited to DevCollab', text: `Accept your invite: ${acceptUrl}` });
+  const workspace = await Workspace.findById(workspaceId);
+  const invitedByUser = await User.findById(req.user.id).select('name');
+
+  await transporter.sendMail({
+    from: `"DevColab" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: `You've been invited to join ${workspace?.name || 'a workspace'} on DevColab`,
+    html: `
+      <div style="font-family:Inter,sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0a0a0b;color:#fff;border-radius:16px;">
+        <h1 style="font-size:22px;margin-bottom:8px;">You're invited! 🎉</h1>
+        <p style="color:#9ca3af;margin-bottom:24px;">
+          <strong style="color:#fff">${invitedByUser?.name || 'Someone'}</strong> has invited you to join
+          <strong style="color:#7c3aed">${workspace?.name || 'a workspace'}</strong> on DevColab as a
+          <strong style="color:#fff">${role}</strong>.
+        </p>
+        <a href="${acceptUrl}"
+          style="display:inline-block;background:#7c3aed;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;">
+          Accept Invitation →
+        </a>
+        <p style="color:#6b7280;font-size:12px;margin-top:24px;">
+          This link expires in 7 days.<br/>
+          If you didn't expect this invite, you can safely ignore this email.
+        </p>
+      </div>
+    `
+  });
   await logActivity({ userId: req.user.id, workspaceId, action: 'invite.sent', entityType: 'member', entityName: email });
   return ok(res, { invite, acceptUrl }, 201);
 });
 
-export const acceptInvite = asyncHandler(async (req, res) => {
+export const validateInvite = asyncHandler(async (req, res) => {
   const invite = await Invite.findOne({ token: req.params.token });
   if (!invite || invite.accepted || invite.expiresAt < new Date()) return fail(res, 'Invite is invalid or expired', 400);
   const user = await User.findOne({ email: invite.email });
-  if (!user) return ok(res, { registered: false, email: invite.email, workspaceId: invite.workspaceId });
-  const workspace = await Workspace.findById(invite.workspaceId);
-  if (!workspace.members.some((member) => member.userId.toString() === user._id.toString())) {
-    workspace.members.push({ userId: user._id, role: invite.role });
-    await workspace.save();
-    await User.findByIdAndUpdate(user._id, { $addToSet: { workspaces: workspace._id } });
+  return ok(res, { valid: true, registered: Boolean(user), email: invite.email, workspaceId: invite.workspaceId });
+});
+
+export const acceptInvite = asyncHandler(async (req, res) => {
+  console.log('🔥 acceptInvite called for token:', req.params.token, 'by user:', req.user.id)
+  const invite = await Invite.findOneAndUpdate(
+    { 
+      token: req.params.token, 
+      accepted: false,           // ← only match if NOT yet accepted
+      expiresAt: { $gt: new Date() }
+    },
+    { $set: { accepted: true } }, // ← mark accepted atomically
+    { new: true }
+  );
+
+  if (!invite || invite.expiresAt < new Date()) {
+    return fail(res, 'Invite is invalid, expired, or already used', 400);
   }
-  invite.accepted = true;
-  await invite.save();
-  await logActivity({ userId: user._id, workspaceId: workspace._id, action: 'member.joined', entityType: 'member', entityId: user._id, entityName: user.name });
-  return ok(res, { accepted: true, workspace });
+
+  // Allow already-accepted invites to pass through gracefully
+  // (handles double-call case)
+  const user = await User.findById(req.user.id);
+  if (!user) return fail(res, 'User not found', 404);
+
+  // Case-insensitive email comparison — THE KEY FIX
+  if (user.email.toLowerCase() !== invite.email.toLowerCase()) {
+    await Invite.findByIdAndUpdate(invite._id, { $set: { accepted: false } });
+    return fail(res, 'This invite was sent to a different email address', 403);
+  }
+
+  const workspace = await Workspace.findById(invite.workspaceId);
+  if (!workspace) return fail(res, 'Workspace not found', 404);
+
+  // Check if already a member — using string comparison safely
+  const alreadyMember = workspace.members.some(
+    (m) => m.userId.toString() === user._id.toString()
+  );
+
+  if (!alreadyMember) {
+    await Workspace.findByIdAndUpdate(
+      invite.workspaceId,
+      {
+        $addToSet: {
+          members: { userId: user._id, role: invite.role, joinedAt: new Date() }
+        }
+      },
+      { new: true }
+    );
+    await User.findByIdAndUpdate(user._id, {
+      $addToSet: { workspaces: workspace._id }
+    });
+  }
+
+  // Mark as accepted regardless — prevents double processing
+  if (!invite.accepted) {
+    invite.accepted = true;
+    await invite.save();
+    await logActivity({
+      userId: user._id,
+      workspaceId: workspace._id,
+      action: 'member.joined',
+      entityType: 'member',
+      entityId: user._id,
+      entityName: user.name,
+    });
+  }
+
+  return ok(res, { accepted: true, workspace, message: `Joined ${workspace.name}` });
 });
 
 export const listPendingInvites = asyncHandler(async (req, res) => {

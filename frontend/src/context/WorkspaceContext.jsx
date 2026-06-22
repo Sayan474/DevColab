@@ -4,28 +4,42 @@ import { useAuth } from './useAuth';
 import { WorkspaceContext } from './workspace-context';
 
 export const WorkspaceProvider = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [currentWorkspace, setCurrentWorkspace] = useState(null);
   const [workspaces, setWorkspaces] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const fetchWorkspaces = useCallback(async () => {
+    if (authLoading) {
+      setLoading(true);
+      setHasLoaded(false);
+      return [];
+    }
     if (!isAuthenticated) {
       setWorkspaces([]);
       setCurrentWorkspace(null);
+      setProjects([]);
+      setHasLoaded(true);
+      setLoading(false);
       return [];
     }
     setLoading(true);
     try {
       const data = unwrap(await api.get('/workspaces'));
-      setWorkspaces(data.workspaces || []);
-      setCurrentWorkspace((prev) => prev || data.workspaces?.[0] || null);
-      return data.workspaces || [];
+      const nextWorkspaces = data.workspaces || [];
+      setWorkspaces(nextWorkspaces);
+      setCurrentWorkspace((prev) => {
+        const prevId = prev?._id || prev?.id;
+        return nextWorkspaces.find((workspace) => (workspace._id || workspace.id) === prevId) || nextWorkspaces[0] || null;
+      });
+      return nextWorkspaces;
     } finally {
+      setHasLoaded(true);
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [authLoading, isAuthenticated]);
 
   const createWorkspace = async (payload) => {
     const data = unwrap(await api.post('/workspaces', payload));
@@ -51,15 +65,19 @@ export const WorkspaceProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    if (user) fetchWorkspaces();
+    fetchWorkspaces();
   }, [user, fetchWorkspaces]);
 
   useEffect(() => {
-    if (currentWorkspace) fetchProjects(currentWorkspace._id || currentWorkspace.id);
+    if (currentWorkspace) {
+      fetchProjects(currentWorkspace._id || currentWorkspace.id);
+    } else {
+      setProjects([]);
+    }
   }, [currentWorkspace, fetchProjects]);
 
   return (
-    <WorkspaceContext.Provider value={{ currentWorkspace, setCurrentWorkspace, workspaces, projects, loading, fetchWorkspaces, createWorkspace, fetchProjects, createProject }}>
+    <WorkspaceContext.Provider value={{ currentWorkspace, setCurrentWorkspace, workspaces, setWorkspaces, projects, loading, hasLoaded, fetchWorkspaces, createWorkspace, fetchProjects, createProject }}>
       {children}
     </WorkspaceContext.Provider>
   );

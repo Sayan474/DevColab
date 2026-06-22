@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { PageShell } from '../../components/layout/PageShell';
 import { Button, Avatar, Input } from '../../components/ui';
@@ -11,6 +11,19 @@ import {
 import api, { unwrap } from '../../lib/api';
 import { useAuth } from '../../context/useAuth';
 import { timeAgo } from '../../lib/format';
+import MarkdownRenderer from '../../components/markdown/MarkdownRenderer';
+
+const htmlToMarkdownFallback = (value = '') => String(value || '')
+  .replace(/\r\n?/g, '\n')
+  .replace(/<br\s*\/?>/gi, '\n')
+  .replace(/<\/p>/gi, '\n\n')
+  .replace(/<\/div>/gi, '\n\n')
+  .replace(/<\/li>/gi, '\n')
+  .replace(/<\/h[1-6]>/gi, '\n\n')
+  .replace(/<li>/gi, '- ')
+  .replace(/<[^>]+>/g, '')
+  .replace(/\n{3,}/g, '\n\n')
+  .trim();
 
 const WikiPage = () => {
   const { id: projectId } = useParams();
@@ -22,7 +35,6 @@ const WikiPage = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [draftTitle, setDraftTitle] = useState('');
   const [saveState, setSaveState] = useState('Saved');
-  const contentRef = useRef(null);
 
   const loadPages = async () => {
     try {
@@ -39,9 +51,10 @@ const WikiPage = () => {
 
   useEffect(() => {
     if (!selectedPageId) return;
-    api.get(`/wiki/${selectedPageId}`)
-      .then((res) => setSelectedPage(unwrap(res)))
-      .catch(() => {});
+    api.get(`/wiki/${selectedPageId}`).then((res) => {
+      const page = unwrap(res).page;
+      setSelectedPage(page ? { ...page, content: htmlToMarkdownFallback(page.content) } : page);
+    }).catch(() => {});
   }, [selectedPageId]);
 
   useEffect(() => {
@@ -54,70 +67,27 @@ const WikiPage = () => {
   useEffect(() => {
     if (!selectedPage) return;
     const timer = setTimeout(async () => {
-      const content = contentRef.current?.innerHTML || selectedPage.content || '';
       setSaveState('Saving...');
-      try {
-        const data = unwrap(await api.put(`/wiki/${selectedPage._id || selectedPage.id}`, { 
-          title: selectedPage.title, 
-          content 
-        }));
-        setSelectedPage(data);
-        setSaveState('Saved');
-      } catch (err) {
-        setSaveState('Error saving');
-      }
+      const data = unwrap(await api.put(`/wiki/${selectedPage._id || selectedPage.id}`, { title: selectedPage.title, content: selectedPage.content || '' }));
+      setSelectedPage(data.page);
+      setSaveState('Saved');
     }, 2000);
     return () => clearTimeout(timer);
   }, [selectedPage?.title, selectedPage?.content]);
 
   const createPage = async () => {
     const title = draftTitle.trim() || 'Untitled Page';
-    try {
-      const data = unwrap(await api.post('/wiki', { 
-        projectId, 
-        title, 
-        content: `<p>${title}</p>` 
-      }));
-      setDraftTitle('');
-      setPages((prev) => [...prev, data]);
-      // Safely access ID
-      setSelectedPageId(data?.id || data?._id);
-    } catch (err) {
-      console.error("Failed to create page:", err);
-    }
+    const data = unwrap(await api.post('/wiki', { projectId, title, content: `# ${title}\n\nStart writing your documentation here.` }));
+    setDraftTitle('');
+    setPages((prev) => [...prev, data.page]);
+    setSelectedPageId(data.page._id);
   };
 
   const saveNow = async () => {
     if (!selectedPage) return;
-    try {
-      setSaveState('Saving...');
-      const data = unwrap(await api.put(`/wiki/${selectedPage._id || selectedPage.id}`, { 
-        title: selectedPage.title, 
-        content: contentRef.current?.innerHTML || '' 
-      }));
-      setSelectedPage(data);
-      setSaveState('Saved');
-    } catch (err) {
-      setSaveState('Error saving');
-    }
-  };
-
-  // --- Toolbar Command Handlers ---
-  const executeCommand = (command, value = null) => {
-    document.execCommand(command, false, value);
-    if (contentRef.current) {
-        contentRef.current.focus();
-    }
-  };
-
-  const handleLink = () => {
-    const url = prompt('Enter the link URL:');
-    if (url) executeCommand('createLink', url);
-  };
-
-  const handleImage = () => {
-    const url = prompt('Enter the image URL:');
-    if (url) executeCommand('insertImage', url);
+    const data = unwrap(await api.put(`/wiki/${selectedPage._id || selectedPage.id}`, { title: selectedPage.title, content: selectedPage.content || '' }));
+    setSelectedPage(data.page);
+    setSaveState('Saved');
   };
 
   return (
@@ -186,13 +156,32 @@ const WikiPage = () => {
                     onChange={(e) => setSelectedPage((prev) => ({ ...prev, title: e.target.value }))} 
                   />
                 </div>
-                <div 
-                  ref={contentRef} 
-                  className="prose prose-invert max-w-none text-gray-300 leading-relaxed text-lg min-h-[300px] outline-none" 
-                  contentEditable 
-                  suppressContentEditableWarning 
-                  dangerouslySetInnerHTML={{ __html: selectedPage.content || '<p>Start typing here...</p>' }} 
-                />
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+                  <div className="surface rounded-2xl p-4 space-y-3 border">
+                    <div className="flex items-center justify-between border-b dark:border-dark-border pb-3">
+                      <div>
+                        <p className="text-sm font-semibold">Markdown editor</p>
+                        <p className="text-xs text-gray-500">Use headings, lists, code fences, and tables.</p>
+                      </div>
+                      <span className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Auto saving</span>
+                    </div>
+                    <textarea
+                      value={selectedPage.content || ''}
+                      onChange={(e) => setSelectedPage((prev) => ({ ...prev, content: e.target.value }))}
+                      className="input-field min-h-[420px] resize-y font-mono text-sm leading-6"
+                      placeholder="# Write your page in markdown\n\n- Use bullets\n- Add code blocks\n- Add tables when needed"
+                    />
+                  </div>
+                  <div className="surface rounded-2xl p-4 border">
+                    <div className="flex items-center justify-between border-b dark:border-dark-border pb-3 mb-4">
+                      <div>
+                        <p className="text-sm font-semibold">Live preview</p>
+                        <p className="text-xs text-gray-500">Rendered with GFM and syntax highlighting.</p>
+                      </div>
+                    </div>
+                    <MarkdownRenderer content={htmlToMarkdownFallback(selectedPage.content)} className="rounded-none" />
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center space-y-4">

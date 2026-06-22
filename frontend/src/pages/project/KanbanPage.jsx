@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom';
 import { PageShell } from '../../components/layout/PageShell';
 import { Badge, Avatar, Button, Input } from '../../components/ui';
 import { cn } from '../../assets/utils';
-import { Plus, MoreHorizontal, X, LayoutGrid, List, CalendarDays, Upload, Trash2 } from 'lucide-react';
+import { Plus, X, LayoutGrid, List, CalendarDays, Upload, Trash2 } from 'lucide-react';
 import { KanbanColumn } from '../../components/kanban/KanbanColumn';
+import MarkdownRenderer from '../../components/markdown/MarkdownRenderer';
 import api, { unwrap } from '../../lib/api';
 import { boardSocket, presenceSocket } from '../../lib/socket';
 import { formatDate, statusLabels, statusOrder } from '../../lib/format';
@@ -115,11 +116,21 @@ const KanbanPage = () => {
   }, [projectId, user]);
 
   const createTask = async () => {
-    if (!newTitle.trim()) return;
-    await api.post('/tasks', { title: newTitle, projectId, status: 'todo' });
-    setNewTitle('');
-    await loadTasks();
-  };
+  const title = newTitle.trim() || 'New Task';
+
+  const data = unwrap(
+    await api.post('/tasks', {
+      title,
+      projectId,
+      status: 'todo',
+    })
+  );
+
+  setNewTitle('');
+  await loadTasks();
+
+  setSelectedTask(data.task);
+};
 
   const createTaskForStatus = async (status) => {
     const data = unwrap(await api.post('/tasks', { title: 'New Task', projectId, status }));
@@ -263,13 +274,13 @@ const KanbanPage = () => {
               <span className="text-xs text-gray-500">{viewers.length || 1} people viewing</span>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-1 bg-black/5 dark:bg-white/5 border border-dark-border rounded-lg p-1">
               <button onClick={() => setView('board')} className={cn("px-2 py-1 text-xs rounded-md flex items-center gap-1", view === 'board' && "bg-primary/20 text-primary")}><LayoutGrid size={14} /> Board</button>
               <button onClick={() => setView('list')} className={cn("px-2 py-1 text-xs rounded-md flex items-center gap-1", view === 'list' && "bg-primary/20 text-primary")}><List size={14} /> List</button>
               <button onClick={() => setView('calendar')} className={cn("px-2 py-1 text-xs rounded-md flex items-center gap-1", view === 'calendar' && "bg-primary/20 text-primary")}><CalendarDays size={14} /> Calendar</button>
             </div>
-            <Input placeholder="New task title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+            <Input className="w-96" placeholder="New task title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
             <Button size="sm" className="gap-2" onClick={createTask}><Plus size={14} /> New Task</Button>
           </div>
         </div>
@@ -471,6 +482,12 @@ const KanbanPage = () => {
                   value={taskDraft?.description || ''}
                   onChange={(event) => setTaskDraft((prev) => ({ ...prev, description: event.target.value }))}
                 />
+                {taskDraft?.description ? (
+                  <div className="mt-3 rounded-xl border border-dark-border bg-black/10 dark:bg-white/5 p-4">
+                    <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-gray-500">Markdown preview</p>
+                    <MarkdownRenderer content={taskDraft.description} compact className="rounded-none" />
+                  </div>
+                ) : null}
               </div>
               <div className="flex justify-end">
                 <Button size="sm" className="gap-2" onClick={saveTask} disabled={saving}>
@@ -490,9 +507,15 @@ const KanbanPage = () => {
               {(selectedTask.attachments || []).length === 0 && (
                 <p className="text-xs text-gray-500">No attachments yet.</p>
               )}
-              <div className="space-y-2">
+              <div className="flex flex-col space-y-2">
                 {(selectedTask.attachments || []).map((file) => (
-                  <a key={file._id || file.url} href={file.url} className="text-xs text-primary hover:underline" target="_blank" rel="noreferrer">
+                  <a
+                    key={file._id || file.url}
+                    href={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${file.url}`}
+                    className="text-xs text-primary hover:underline"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {file.filename}
                   </a>
                 ))}
@@ -502,7 +525,7 @@ const KanbanPage = () => {
               <h4 className="font-bold">Comments <span className="text-xs text-gray-500">{selectedTask.comments?.length || 0}</span></h4>
               <textarea name="comment" placeholder="Add a comment... Use @Full Name to mention" className="w-full bg-black/10 dark:bg-white/5 border border-dark-border rounded-xl p-3 text-sm outline-none focus:ring-1 focus:ring-primary h-20 resize-none" />
               <Button size="sm">Post Comment</Button>
-              <div className="space-y-2">{selectedTask.comments?.map((comment) => <div key={comment._id} className="text-xs bg-white/5 rounded-lg p-3"><strong>{comment.author?.name || "User"}:</strong> {comment.text}</div>)}</div>
+              <div className="space-y-2">{selectedTask.comments?.map((comment) => <div key={comment._id} className="rounded-xl border border-dark-border bg-white/5 p-3"><p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">{comment.author?.name || "User"}</p><MarkdownRenderer content={comment.text || ''} compact className="rounded-none" /></div>)}</div>
             </form>
           </div>
         )}
