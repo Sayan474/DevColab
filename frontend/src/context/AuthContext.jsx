@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
     clearSocketToken();
     disconnectSockets();
     setUser(null);
-    window.location.href = '/login';
+    window.location.href = '/';
   };
 
   return (

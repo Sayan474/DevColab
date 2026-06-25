@@ -12,6 +12,9 @@ import ProjectsPage from "./pages/project/ProjectsPage";
 import NewProjectPage from "./pages/project/NewProjectPage";
 import WorkspaceSettings from "./pages/settings/WorkspaceSettings";
 import ProfileSettings from "./pages/settings/ProfileSettings";
+import Landing from "./pages/Landing";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import AcceptInvite from './pages/invite/AcceptInvite';
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
@@ -48,8 +51,11 @@ const AppRoutes = () => {
   }
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
       <Route path="/invite/accept/:token" element={<AcceptInvite />} />
       <Route path="/onboarding/workspace" element={<ProtectedRoute><CreateWorkspace /></ProtectedRoute>} />
       <Route path="/dashboard" element={guarded(<Dashboard />)} />
@@ -62,7 +68,6 @@ const AppRoutes = () => {
       <Route path="/project/:id/ai" element={guarded(<AIPage />)} />
       <Route path="/settings/workspace" element={guarded(<WorkspaceSettings />)} />
       <Route path="/settings/profile" element={guarded(<ProfileSettings />)} />
-      <Route path="/" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
     </Routes>
   );
 };

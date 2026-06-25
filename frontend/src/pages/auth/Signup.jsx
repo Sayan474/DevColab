@@ -12,6 +12,9 @@ const Signup = () => {
   const [form, setForm] = useState({ name: "", email: searchParams.get('email') || "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [termsOpened, setTermsOpened] = useState(false);
+  const [privacyOpened, setPrivacyOpened] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -87,7 +90,7 @@ const Signup = () => {
             </div>
 
             <span className="text-3xl font-black tracking-tight">
-              DevColab
+              DevCollab
             </span>
           </div>
 
@@ -275,45 +278,102 @@ const Signup = () => {
             </div>
 
             {/* Terms */}
-            <div className="flex items-start gap-3 pt-1">
-              <input
-                type="checkbox"
-                id="terms"
-                required
-                className="
-                  mt-1
-                  rounded
-                  cursor-pointer
-                  border-white/10
-                  bg-white/5
-                  accent-indigo-500
-                "
-              />
+            <div className="flex flex-col gap-2 pt-1">
+              <div className="flex items-start gap-3">
+                {/* Hidden native input for HTML5 form validation */}
+                <input
+                  type="checkbox"
+                  id="terms"
+                  required
+                  checked={acceptTerms}
+                  readOnly
+                  className="sr-only"
+                />
+                
+                {/* Custom styled checkbox with SVG checkmark */}
+                <div
+                  onClick={() => {
+                    if (termsOpened && privacyOpened) {
+                      setAcceptTerms(!acceptTerms);
+                    }
+                  }}
+                  className={`
+                    mt-0.5
+                    w-5
+                    h-5
+                    rounded
+                    border
+                    flex
+                    items-center
+                    justify-center
+                    cursor-pointer
+                    transition-all
+                    shrink-0
+                    ${acceptTerms 
+                      ? "bg-indigo-600 border-indigo-500 text-white" 
+                      : "border-white/20 bg-white/5 hover:border-white/40"
+                    }
+                    ${(!termsOpened || !privacyOpened) 
+                      ? "opacity-30 cursor-not-allowed" 
+                      : ""
+                    }
+                  `}
+                >
+                  {acceptTerms && (
+                    <svg 
+                      className="w-3.5 h-3.5 stroke-white" 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      strokeWidth="3.5"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        d="M4.5 12.75l6 6 9-13.5" 
+                      />
+                    </svg>
+                  )}
+                </div>
 
-              <label
-                htmlFor="terms"
-                className="text-xs leading-relaxed text-zinc-400"
-              >
-                I agree to the{" "}
-                <a
-                  href="#"
-                  className="text-white hover:text-indigo-400 transition"
+                <label
+                  htmlFor="terms"
+                  className="text-xs leading-relaxed text-zinc-400"
                 >
-                  Terms of Service
-                </a>{" "}
-                and{" "}
-                <a
-                  href="#"
-                  className="text-white hover:text-indigo-400 transition"
-                >
-                  Privacy Policy
-                </a>
-              </label>
+                  I agree to the{" "}
+                  <a
+                    href="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setTermsOpened(true)}
+                    className="text-white hover:text-indigo-400 transition underline decoration-indigo-500/50 font-medium"
+                  >
+                    Terms of Service
+                  </a>{" "}
+                  and{" "}
+                  <a
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setPrivacyOpened(true)}
+                    className="text-white hover:text-indigo-400 transition underline decoration-indigo-500/50 font-medium"
+                  >
+                    Privacy Policy
+                  </a>
+                </label>
+              </div>
+
+              {(!termsOpened || !privacyOpened) && (
+                <div className="text-[10px] text-zinc-500 bg-white/[0.02] border border-white/5 px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                  Please open both links to enable the agreement checkbox.
+                </div>
+              )}
             </div>
 
             {/* Submit */}
             <Button
               type="submit"
+              disabled={!acceptTerms || submitting}
               className="
                 w-full
                 py-3
@@ -324,6 +384,8 @@ const Signup = () => {
                 from-indigo-500
                 to-purple-600
                 hover:opacity-90
+                disabled:opacity-40
+                disabled:cursor-not-allowed
                 shadow-lg
                 shadow-indigo-500/30
                 transition-all
