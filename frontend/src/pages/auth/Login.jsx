@@ -15,6 +15,7 @@ const Login = () => {
   });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [resetStep, setResetStep] = useState("request");
   const [resetEmail, setResetEmail] = useState("");
@@ -125,7 +126,7 @@ const Login = () => {
               <span className="text-white text-2xl font-black">D</span>
             </div>
 
-            <span className="text-3xl font-black tracking-tight">DevColab</span>
+            <span className="text-3xl font-black tracking-tight">DevCollab</span>
           </div>
 
           {/* Heading */}
@@ -288,20 +289,59 @@ const Login = () => {
               </div>
 
               {/* Remember Me */}
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 text-zinc-400">
+              <div className="flex items-center justify-between text-sm select-none">
+                <div className="flex items-center gap-2.5 text-zinc-400">
+                  {/* Hidden native input for state access */}
                   <input
                     type="checkbox"
-                    className="
-                      rounded
-                      cursor-pointer
-                      border-white/10
-                      bg-white/5
-                      accent-indigo-500
-                    "
+                    checked={rememberMe}
+                    readOnly
+                    className="sr-only"
                   />
-                  Remember me
-                </label>
+
+                  {/* Custom Checkbox */}
+                  <div
+                    onClick={() => setRememberMe(!rememberMe)}
+                    className={`
+                      w-5
+                      h-5
+                      rounded
+                      border
+                      flex
+                      items-center
+                      justify-center
+                      cursor-pointer
+                      transition-all
+                      shrink-0
+                      ${rememberMe 
+                        ? "bg-indigo-600 border-indigo-500 text-white" 
+                        : "border-white/20 bg-white/5 hover:border-white/40"
+                      }
+                    `}
+                  >
+                    {rememberMe && (
+                      <svg 
+                        className="w-3.5 h-3.5 stroke-white" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth="3.5"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          d="M4.5 12.75l6 6 9-13.5" 
+                        />
+                      </svg>
+                    )}
+                  </div>
+
+                  <span 
+                    onClick={() => setRememberMe(!rememberMe)}
+                    className="cursor-pointer text-xs"
+                  >
+                    Remember me
+                  </span>
+                </div>
               </div>
 
               {/* Submit */}

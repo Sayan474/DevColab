@@ -32,7 +32,10 @@ api.interceptors.response.use(
       if (
         !window.location.pathname.includes('/login') &&
         !window.location.pathname.includes('/signup') &&
-        !window.location.pathname.includes('/invite/accept')
+        !window.location.pathname.includes('/invite/accept') &&
+        !window.location.pathname.includes('/terms') &&
+        !window.location.pathname.includes('/privacy') &&
+        window.location.pathname !== '/'
       ) {
         window.location.href = '/login';
       }
