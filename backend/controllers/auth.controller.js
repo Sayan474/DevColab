@@ -7,12 +7,11 @@ import User from '../models/User.js';
 import { fail, ok } from '../utils/http.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
-// Cookie config — same object used in all three places
 const COOKIE_OPTIONS = {
-  httpOnly: true,          // JS cannot read this — prevents XSS attacks
-  secure: process.env.NODE_ENV === 'production', // HTTPS only in prod, HTTP ok in dev
-  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' needed for cross-origin in prod
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+  httpOnly: true,          
+  secure: process.env.NODE_ENV === 'production', 
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', 
+  maxAge: 7 * 24 * 60 * 60 * 1000, 
 };
 
 const signToken = (user) => jwt.sign(
@@ -45,9 +44,8 @@ export const register = asyncHandler(async (req, res) => {
   const token = signToken(user);
   const hydrated = await publicUser(user._id);
 
-  // Set token as httpOnly cookie instead of returning in body
   res.cookie('devcollab_token', token, COOKIE_OPTIONS);
-  return ok(res, { user: hydrated, socketToken: token }, 201); // ← add socketToken
+  return ok(res, { user: hydrated, socketToken: token }, 201); 
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -63,18 +61,19 @@ export const login = asyncHandler(async (req, res) => {
   const token = signToken(user);
   const hydrated = await publicUser(user._id);
 
-  // Set token as httpOnly cookie
   res.cookie('devcollab_token', token, COOKIE_OPTIONS);
-  return ok(res, { user: hydrated, socketToken: token }); // ← add socketToken
+  return ok(res, { user: hydrated, socketToken: token }); 
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  // Clear the cookie by setting maxAge to 0
   res.cookie('devcollab_token', '', { ...COOKIE_OPTIONS, maxAge: 0 });
   return ok(res, { message: 'Logged out successfully' });
 });
 
 export const me = asyncHandler(async (req, res) => {
+  if (!req.user || !req.user.id) {
+    return fail(res, 'Unauthorized access request', 401);
+  }
   const user = await publicUser(req.user.id);
   return ok(res, { user });
 });
@@ -103,7 +102,7 @@ export const requestPasswordReset = asyncHandler(async (req, res) => {
 
   const { email } = req.body;
   const user = await User.findOne({ email: email.toLowerCase() });
-  if (!user) return ok(res, { sent: true }); // don't reveal if email exists
+  if (!user) return ok(res, { sent: true }); 
 
   const otp = crypto.randomInt(100000, 999999).toString();
   const hash = crypto.createHash('sha256').update(otp).digest('hex');
@@ -146,12 +145,13 @@ export const resetPasswordWithOtp = asyncHandler(async (req, res) => {
 });
 
 export const oAuthCallback = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    console.error('OAuth Callback Error: No authenticated user payload found on request object.');
+    return res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
+  }
+
   const token = signToken(req.user);
-  res.cookie('token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000 
-  });
-  res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+  res.cookie('devcollab_token', token, COOKIE_OPTIONS);
+  
+  return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
 });
