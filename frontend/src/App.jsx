@@ -24,7 +24,7 @@ import { useWorkspace } from "./context/useWorkspace";
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-  if (loading) return <div className="min-h-screen surface flex items-center justify-center text-gray-400">Loading DevColab...</div>;
+  if (loading) return <div className="min-h-screen surface flex items-center justify-center text-gray-400">Loading DevCollab...</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 };
@@ -47,7 +47,7 @@ const AppRoutes = () => {
   const { isAuthenticated, loading } = useAuth();
   const guarded = (element) => <ProtectedRoute><WorkspaceRoute>{element}</WorkspaceRoute></ProtectedRoute>;
   if (loading) {
-    return <div className="min-h-screen surface flex items-center justify-center text-gray-400">Loading DevColab...</div>;
+    return <div className="min-h-screen surface flex items-center justify-center text-gray-400">Loading DevCollab...</div>;
   }
   return (
     <Routes>

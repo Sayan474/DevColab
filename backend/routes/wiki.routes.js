@@ -1,6 +1,6 @@
 import { Router } from 'express';
 
-import { getWiki, updateWiki, getPage } from '../controllers/wiki.controller.js';
+import { getWiki, updateWiki, getPage, deletePage } from '../controllers/wiki.controller.js';
 import auth from '../middleware/auth.js'; 
 
 const router = Router();
@@ -13,6 +13,8 @@ router.get('/project/:projectId', getWiki);
 
 
 router.get('/:id', getPage);
+router.delete('/:id', deletePage);
+
 
 
 router.post('/', updateWiki);
