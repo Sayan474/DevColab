@@ -43,11 +43,26 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password) => {
     setError('');
-    const data = unwrap(await api.post('/auth/register', { name, email, password }));
+    return unwrap(await api.post('/auth/register/start', { name, email, password }));
+  };
+
+  const startRegister = async (name, email, password) => {
+    setError('');
+    return unwrap(await api.post('/auth/register/start', { name, email, password }));
+  };
+
+  const verifyRegister = async (email, otp) => {
+    setError('');
+    const data = unwrap(await api.post('/auth/register/verify', { email, otp }));
     setUser(data.user);
     setSocketToken(data.socketToken || '');
     refreshSocketAuth();
     return data.user;
+  };
+
+  const resendRegisterOtp = async (email) => {
+    setError('');
+    return unwrap(await api.post('/auth/register/resend', { email }));
   };
 
   const logout = async () => {
@@ -72,6 +87,9 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: Boolean(user),
       login,
       register,
+      startRegister,
+      verifyRegister,
+      resendRegisterOtp,
       logout,
       setUser,
       setError

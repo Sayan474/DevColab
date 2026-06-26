@@ -9,6 +9,9 @@ import {
   me, 
   register, 
   logout,
+  startRegister,
+  verifyRegister,
+  resendRegisterOtp,
   requestPasswordReset, 
   resetPasswordWithOtp, 
   oAuthCallback 
@@ -21,6 +24,21 @@ router.post('/register', [
   body('email').isEmail().withMessage('Valid email is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
 ], register);
+
+router.post('/register/start', [
+  body('name').trim().notEmpty().withMessage('Name is required'),
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+], startRegister);
+
+router.post('/register/verify', [
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('otp').isLength({ min: 6, max: 6 }).withMessage('Enter the 6-digit OTP'),
+], verifyRegister);
+
+router.post('/register/resend', [
+  body('email').isEmail().withMessage('Valid email is required'),
+], resendRegisterOtp);
 
 router.post('/login', [
   body('email').isEmail().withMessage('Valid email is required'),

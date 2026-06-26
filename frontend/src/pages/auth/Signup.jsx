@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { Button, Input } from "../../components/ui";
@@ -11,11 +11,15 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: "", email: searchParams.get('email') || "" });
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState("form");
+  const [secondsLeft, setSecondsLeft] = useState(600);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [termsOpened, setTermsOpened] = useState(false);
   const [privacyOpened, setPrivacyOpened] = useState(false);
-  const { register } = useAuth();
+  const { startRegister, verifyRegister, resendRegisterOtp } = useAuth();
   const navigate = useNavigate();
 
   // Password Strength Logic
@@ -51,12 +55,40 @@ const Signup = () => {
 
   const strength = getStrength(password);
 
+  useEffect(() => {
+    if (step !== "verify" || secondsLeft <= 0) return undefined;
+    const timer = setInterval(() => {
+      setSecondsLeft((current) => Math.max(current - 1, 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, secondsLeft]);
+
+  const countdown = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setSubmitting(true);
     setError("");
+    setMessage("");
     try {
-      await register(form.name, form.email, password);
+      await startRegister(form.name, form.email, password);
+      setStep("verify");
+      setSecondsLeft(600);
+      setMessage(`We sent a 6-digit verification code to ${form.email}.`);
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to send verification code");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const verifyOtp = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+    setMessage("");
+    try {
+      await verifyRegister(form.email, otp);
       const pendingToken = localStorage.getItem('pendingInviteToken') || searchParams.get('invite');
       if (pendingToken) {
         localStorage.removeItem('pendingInviteToken');
@@ -65,10 +97,33 @@ const Signup = () => {
         navigate('/onboarding/workspace');
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Unable to create account");
+      setError(err.response?.data?.message || "Unable to verify OTP");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const resendOtp = async () => {
+    setSubmitting(true);
+    setError("");
+    setMessage("");
+    try {
+      await resendRegisterOtp(form.email);
+      setOtp("");
+      setSecondsLeft(600);
+      setMessage(`We sent a new code to ${form.email}.`);
+    } catch (err) {
+      setError(err.response?.data?.message || "Unable to resend OTP");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const goBack = () => {
+    setStep("form");
+    setOtp("");
+    setError("");
+    setMessage("");
   };
 
   return (
@@ -163,11 +218,13 @@ const Signup = () => {
           </div>
 
           {/* FORM */}
+          {step === "form" ? (
           <form
             className="space-y-5"
             onSubmit={handleSubmit}
           >
             {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{error}</p>}
+            {message && <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">{message}</p>}
             {/* Full Name */}
             <Input
               label="Full Name"
@@ -395,6 +452,71 @@ const Signup = () => {
               {submitting ? "Creating..." : "Create Account"}
             </Button>
           </form>
+          ) : (
+          <form className="space-y-5" onSubmit={verifyOtp}>
+            {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{error}</p>}
+            {message && <p className="text-sm text-center text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3 py-2">{message}</p>}
+            <div className="space-y-2 text-center">
+              <h3 className="text-2xl font-bold text-white">Verify your email</h3>
+              <p className="text-sm text-zinc-400">
+                Enter the 6-digit code sent to <span className="text-white">{form.email}</span>.
+              </p>
+              <p className="text-xs text-zinc-500">Code expires in {countdown}</p>
+            </div>
+
+            <Input
+              label="Verification Code"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="123456"
+              required
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              className="
+                bg-white/5
+                border-white/10
+                focus:border-indigo-500
+                focus:ring-2
+                focus:ring-indigo-500/30
+                transition-all
+                text-center
+                tracking-[0.5em]
+              "
+            />
+
+            <Button
+              type="submit"
+              disabled={submitting || otp.length !== 6}
+              className="
+                w-full
+                py-3
+                cursor-pointer
+                rounded-xl
+                font-semibold
+                bg-gradient-to-r
+                from-indigo-500
+                to-purple-600
+                hover:opacity-90
+                disabled:opacity-40
+                disabled:cursor-not-allowed
+                shadow-lg
+                shadow-indigo-500/30
+                transition-all
+              "
+            >
+              {submitting ? "Verifying..." : "Verify & Create Account"}
+            </Button>
+
+            <div className="flex items-center justify-between gap-3">
+              <Button type="button" variant="secondary" onClick={goBack} disabled={submitting}>
+                Back
+              </Button>
+              <Button type="button" variant="ghost" onClick={resendOtp} disabled={submitting || secondsLeft > 540}>
+                Resend OTP
+              </Button>
+            </div>
+          </form>
+          )}
 
           {/* Bottom */}
           <div className="mt-6 space-y-3 text-center">
