@@ -108,16 +108,18 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-black text-white overflow-hidden">
+    <div className="flex min-h-screen bg-[#070709] text-white overflow-hidden relative font-sans">
+      {/* Background Grid Pattern & Glowing Pulsing Lines */}
+      <div className="absolute inset-0 glowing-grid pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_100%_200px,rgba(99,102,241,0.08),transparent)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_0%_800px,rgba(139,92,246,0.08),transparent)] pointer-events-none" />
+
+      {/* FLOATING GLOWS */}
+      <div className="absolute top-20 left-1/4 w-[40rem] h-[40rem] bg-purple-600/10 blur-[130px] rounded-full pointer-events-none animate-pulse" style={{ animationDuration: '8s' }} />
+      <div className="absolute top-[40rem] right-1/4 w-[35rem] h-[35rem] bg-indigo-600/10 blur-[130px] rounded-full pointer-events-none animate-pulse" style={{ animationDuration: '12s' }} />
+
       {/* LEFT PANEL */}
-      <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-black p-12 flex-col justify-between">
-        {/* Background Noise */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
-
-        {/* Glow Effects */}
-        <div className="absolute top-20 left-20 w-72 h-72 bg-purple-500/20 blur-3xl rounded-full" />
-        <div className="absolute bottom-10 right-10 w-80 h-80 bg-indigo-500/20 blur-3xl rounded-full" />
-
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden p-12 flex-col justify-between border-r border-white/5 bg-white/[0.01] backdrop-blur-[2px] z-10">
         {/* Content */}
         <div className="relative z-10">
           {/* Logo */}
@@ -130,7 +132,7 @@ const Login = () => {
           </div>
 
           {/* Heading */}
-          <h1 className="text-6xl font-black leading-[1.05] tracking-tight mb-6 max-w-xl">
+          <h1 className="text-6xl font-black leading-[1.05] tracking-tight mb-6 max-w-xl text-white bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-400">
             Where developer teams move fast together.
           </h1>
 
@@ -141,7 +143,7 @@ const Login = () => {
 
           {/* Features */}
           <div className="flex gap-x-7">
-            <div className="flex items-center gap-4 bg-white/[0.05] border border-white/10 backdrop-blur-xl px-5 py-4 rounded-2xl w-fit shadow-lg">
+            <div className="flex items-center gap-4 bg-white/[0.02] border border-white/5 backdrop-blur-xl px-5 py-4 rounded-2xl w-fit shadow-lg">
               <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
                 <Kanban className="text-indigo-400" size={20} />
               </div>
@@ -154,7 +156,7 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-white/[0.05] border border-white/10 backdrop-blur-xl px-5 py-4 rounded-2xl w-fit shadow-lg">
+            <div className="flex items-center gap-4 bg-white/[0.02] border border-white/5 backdrop-blur-xl px-5 py-4 rounded-2xl w-fit shadow-lg">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                 <FileCode className="text-emerald-400" size={20} />
               </div>
@@ -176,7 +178,7 @@ const Login = () => {
       </div>
 
       {/* RIGHT PANEL */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-10 relative bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.08),transparent_40%)]">
+      <div className="flex-1 flex items-center justify-center p-6 md:p-10 relative z-10">
         {/* Login Card */}
         <div
           className="
@@ -196,7 +198,7 @@ const Login = () => {
         >
           {/* Heading */}
           <div className="mb-8 text-center">
-            <h2 className="text-4xl font-black tracking-tight mb-3">
+            <h2 className="text-4xl font-black tracking-tight mb-3 text-white">
               Welcome Back
             </h2>
 

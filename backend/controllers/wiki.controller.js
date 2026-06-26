@@ -35,7 +35,8 @@ export const getWiki = async (req, res) => {
  */
 export const updateWiki = async (req, res) => {
   try {
-    const { id, title, content, projectId, parentId, order, changeSummary } = req.body;
+    const id = req.body.id || req.params.id;
+    const { title, content, projectId, parentId, order, changeSummary } = req.body;
     const userId = req.user?._id || req.user?.id;
 
     if (!projectId) {
@@ -124,3 +125,28 @@ export const getPage = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Delete a single wiki page by ID
+ * @route   DELETE /api/wiki/:id
+ * @access  Private
+ */
+export const deletePage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const page = await WikiPage.findById(id);
+
+    if (!page) {
+      return res.status(404).json({ message: 'Wiki page not found' });
+    }
+
+    await WikiPage.findByIdAndDelete(id);
+    return res.status(200).json({ message: 'Wiki page deleted successfully' });
+  } catch (error) {
+    console.error('Error in deletePage controller:', error.message);
+    return res.status(500).json({ 
+      message: 'Server error while deleting the wiki page', 
+      error: error.message 
+    });
+  }
+};
