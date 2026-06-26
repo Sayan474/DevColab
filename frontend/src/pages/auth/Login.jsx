@@ -173,7 +173,7 @@ const Login = () => {
 
         {/* Footer */}
         <div className="relative z-10 text-sm text-zinc-500">
-          © 2026 DevColab Inc. Built for high-performance teams.
+          © 2026 DevCollab Inc. Built for high-performance teams.
         </div>
       </div>
 
