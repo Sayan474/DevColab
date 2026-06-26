@@ -20,6 +20,18 @@ const Landing = () => {
 
   const gridRef = useRef(null);
 
+  const scrollTo = (id) => {
+  const element = document.getElementById(id);
+  if (!element) return;
+
+  const navbarHeight = 95; // adjust if needed
+
+  window.scrollTo({
+    top: element.offsetTop - navbarHeight,
+    behavior: "smooth",
+  });
+};
+
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 50) {
@@ -168,9 +180,17 @@ const Landing = () => {
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-sm text-zinc-400">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#preview" className="hover:text-white transition-colors">Preview</a>
-            <a href="#tech" className="hover:text-white transition-colors">Tech Stack</a>
+            <button onClick={() => scrollTo("features")}>
+                Features
+            </button>
+
+            <button onClick={() => scrollTo("preview")}>
+                Preview
+            </button>
+
+            <button onClick={() => scrollTo("tech")}>
+                Tech Stack
+            </button>
           </nav>
 
           <div className="flex items-center gap-4">

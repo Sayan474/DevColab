@@ -38,12 +38,30 @@ const Dashboard = () => {
   const handleNewProject = () => navigate('/projects/new');
   const handleViewFeed = () => navigate(primaryProjectId ? `/project/${primaryProjectId}/activity` : '/projects');
 
+  const hour = new Date().toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "numeric",
+    hour12: false,
+  });
+
+  let greeting = "Hello";
+
+  if (hour >= 5 && hour < 12) {
+    greeting = "Good morning";
+  } else if (hour >= 12 && hour < 17) {
+    greeting = "Good afternoon";
+  } else if (hour >= 17 && hour < 21) {
+    greeting = "Good evening";
+  } else {
+    greeting = "Good night";
+  }
+
   return (
     <PageShell breadcrumbs={["Dashboard"]}>
       <div className="max-w-6xl mx-auto space-y-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-bold mb-1">Good morning, {user?.name || "developer"}</h1>
+            <h1 className="text-3xl font-bold mb-1">{greeting}, {user?.name || "developer"}</h1>
             <p className="text-gray-500">Here's what's happening across your projects today.</p>
           </div>
           <div className="flex gap-3">
