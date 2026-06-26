@@ -21,6 +21,10 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { WorkspaceProvider } from "./context/WorkspaceContext";
 import { useAuth } from "./context/useAuth";
 import { useWorkspace } from "./context/useWorkspace";
+import { GlobalErrorBoundary } from "./components/ErrorBoundary";
+
+
+
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -43,21 +47,23 @@ const WorkspaceRoute = ({ children }) => {
   return children;
 };
 
+const withBoundary = (element) => <GlobalErrorBoundary>{element}</GlobalErrorBoundary>;
+
 const AppRoutes = () => {
-  const { isAuthenticated, loading } = useAuth();
-  const guarded = (element) => <ProtectedRoute><WorkspaceRoute>{element}</WorkspaceRoute></ProtectedRoute>;
+  const { loading } = useAuth();
+  const guarded = (element) => withBoundary(<ProtectedRoute><WorkspaceRoute>{element}</WorkspaceRoute></ProtectedRoute>);
   if (loading) {
     return <div className="min-h-screen surface flex items-center justify-center text-gray-400">Loading DevCollab...</div>;
   }
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/invite/accept/:token" element={<AcceptInvite />} />
-      <Route path="/onboarding/workspace" element={<ProtectedRoute><CreateWorkspace /></ProtectedRoute>} />
+      <Route path="/" element={withBoundary(<Landing />)} />
+      <Route path="/login" element={withBoundary(<Login />)} />
+      <Route path="/signup" element={withBoundary(<Signup />)} />
+      <Route path="/terms" element={withBoundary(<Terms />)} />
+      <Route path="/privacy" element={withBoundary(<Privacy />)} />
+      <Route path="/invite/accept/:token" element={withBoundary(<AcceptInvite />)} />
+      <Route path="/onboarding/workspace" element={withBoundary(<ProtectedRoute><CreateWorkspace /></ProtectedRoute>)} />
       <Route path="/dashboard" element={guarded(<Dashboard />)} />
       <Route path="/projects" element={guarded(<ProjectsPage />)} />
       <Route path="/projects/new" element={guarded(<NewProjectPage />)} />
